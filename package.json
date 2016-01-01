@@ -1,0 +1,29 @@
+{
+  "name": "react-static-webpack-plugin",
+  "version": "0.0.0",
+  "description": "My awe-inspiring module",
+  "license": "MIT",
+  "repository": "iansinnott/react-static-webpack-plugin",
+  "author": {
+    "name": "Ian Sinnott",
+    "email": "ian@iansinnott.com",
+    "url": "iansinnott.com"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "xo && ava"
+  },
+  "files": [
+    "index.js"
+  ],
+  "keywords": [
+    ""
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "ava": "^0.8.0",
+    "xo": "^0.12.1"
+  }
+}
