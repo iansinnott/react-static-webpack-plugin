@@ -19,6 +19,9 @@
     // Console can be useful and can also be stripped about by webpack in prod
     "no-console": [0],
 
+    // No spaces before function parentheses
+    "space-before-function-paren": [2, "never"],
+
     // Don't require a `new` keyword when calling capitalized functons. Ex:
     // Immutable.Map({})
     "new-cap": [2, { "capIsNew": false }],
