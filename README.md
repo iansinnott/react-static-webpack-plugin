@@ -1,7 +1,6 @@
-# react-static-webpack-plugin [![Build Status](https://travis-ci.org/iansinnott/react-static-webpack-plugin.svg?branch=master)](https://travis-ci.org/iansinnott/react-static-webpack-plugin)
+# React Static Webpack Plugin
 
-> My awe-inspiring module
-
+_Build full static sites using React, React Router and Webpack_
 
 ## Install
 
@@ -13,32 +12,50 @@ $ npm install --save react-static-webpack-plugin
 ## Usage
 
 ```js
-const reactStaticWebpackPlugin = require('react-static-webpack-plugin');
+const ReactStaticPlugin = require('react-static-webpack-plugin');
 
-reactStaticWebpackPlugin('unicorns');
-//=> 'unicorns & rainbows'
+module.exports = {
+
+  entry: {
+    app: ['./client/index.js'],
+  },
+
+  plugins: [
+    new ReactStaticPlugin({ src: 'app' }), // Chunk or file name
+  ],
+
+  // ... other config
+
+};
 ```
-
 
 ## API
 
-### reactStaticWebpackPlugin(input, [options])
+### `new ReactStaticPlugin({ ...options })`
 
-#### input
+#### `src`
 
 Type: `string`
 
-Lorem ipsum.
+The name of the chunk or file that exports your app's React Router config. Example: `'app'`
 
-#### options
+#### `bundle`
 
-##### foo
+Type: `string`
 
-Type: `boolean`  
-Default: `false`
+Path to your bundled application. Example: `'/app.js'`
 
-Lorem ipsum.
+#### `stylesheet`
 
+Type: `string`
+
+Path to your external stylesheet, if any. Example `'/app.css'`
+
+#### `favicon`
+
+Type: `string`
+
+Path to your favicon, if any. Example `'/favicon.ico'`
 
 ## License
 
