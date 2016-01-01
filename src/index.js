@@ -1,15 +1,13 @@
-/* eslint-disable no-var, vars-on-top, space-before-function-paren, func-names, object-shorthand, no-use-before-define, no-unused-expressions */
-var React = require('react');
-var ReactDOM = require('react-dom/server');
-var evaluate = require('eval');
-var match = require('react-router').match;
-var RoutingContext = require('react-router').RoutingContext;
-var async = require('async');
-var path = require('path');
+/* eslint-disable no-use-before-define, func-names */
+import path from 'path';
+import React from 'react';
+import ReactDOM from 'react-dom/server';
+import evaluate from 'eval';
+import { match, RoutingContext } from 'react-router';
+import async from 'async';
 
-var getAllPaths = require('../src/lib/getAllPaths.js').getAllPaths;
-
-var renderDocumentToString = require('../src/Html.js').renderDocumentToString;
+import getAllPaths from './getAllPaths.js';
+import Html from './Html.js';
 
 /**
  * We are running in this host system's node env. So all node goes but be aware
@@ -44,29 +42,29 @@ function StaticSitePlugin(options) {
  *
  */
 StaticSitePlugin.prototype.apply = function(compiler) {
-  compiler.plugin('emit', function(compilation, cb) {
-    var asset = findAsset(this.options.src, compilation);
+  compiler.plugin('emit', (compilation, cb) => {
+    const asset = findAsset(this.options.src, compilation);
 
     if (!asset)
       throw new Error('Output file not found: `' + this.options.src + '`');
 
-    var routes = evaluate(asset.source()).routes;
-    var paths = getAllPaths(routes);
+    const routes = evaluate(asset.source()).routes;
+    const paths = getAllPaths(routes);
     console.log(paths);
 
-    async.forEach(
-      paths,
-      function forEachPath(location, callback) {
-        match({ routes: routes, location: location }, function(error, redirectLocation, renderProps) {
-          var route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-          var body = ReactDOM.renderToString(<RoutingContext {...renderProps} />);
-          var doc = renderDocumentToString({
+    async.forEach(paths,
+      (location, callback) => {
+        match({ routes, location }, (error, redirectLocation, renderProps) => {
+          const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
+          const body = ReactDOM.renderToString(<RoutingContext {...renderProps} />);
+          const { stylesheet, favicon } = this.options;
+          const doc = Html.renderToDocumentString({
             title: route.title,
-            body: body,
-            stylesheet: this.options.stylesheet,
-            favicon: this.options.favicon,
+            body,
+            stylesheet,
+            favicon,
           });
-          var assetKey = getAssetKey(location);
+          const assetKey = getAssetKey(location);
 
           compilation.assets[assetKey] = {
             source() { return doc; },
@@ -74,14 +72,14 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           };
 
           callback();
-        }.bind(this));
-      }.bind(this),
-      function done(err) {
+        });
+      },
+      err => {
         if (err) throw err;
         cb();
       }
     );
-  }.bind(this));
+  });
 };
 
 /**
@@ -89,15 +87,15 @@ StaticSitePlugin.prototype.apply = function(compiler) {
  * @param {Compilation} compilation
  */
 function findAsset(src, compilation) {
-  var asset = compilation.assets[src];
+  const asset = compilation.assets[src];
 
   // Found it. It was a key within assets
   if (asset) return asset;
 
   // Didn't find it in assets, it must be a chunk
 
-  var webpackStatsJson = compilation.getStats().toJson();
-  var chunkValue = webpackStatsJson.assetsByChunkName[src];
+  const webpackStatsJson = compilation.getStats().toJson();
+  let chunkValue = webpackStatsJson.assetsByChunkName[src];
 
   // Uh oh, couldn't find it as a chunk value either. This indicates a failure
   // to find the asset. The caller should handle a falsey value as it sees fit.
@@ -129,9 +127,9 @@ function findAsset(src, compilation) {
  * @return {string} relative path to output file
  */
 function getAssetKey(location) {
-  var basename = path.basename(location);
-  var dirname = path.dirname(location).slice(1); // See NOTE above
-  var filename;
+  const basename = path.basename(location);
+  const dirname = path.dirname(location).slice(1); // See NOTE above
+  let filename;
 
   if (!basename || location.slice(-1) === '/')
     filename = 'index.html';
