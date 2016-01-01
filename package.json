@@ -1,19 +1,21 @@
 {
   "name": "react-static-webpack-plugin",
   "version": "0.0.0",
-  "description": "My awe-inspiring module",
+  "description": "Generate full static sites using React, React Router and Webpack",
   "license": "MIT",
   "repository": "iansinnott/react-static-webpack-plugin",
+  "main": "dist/index.js",
   "author": {
     "name": "Ian Sinnott",
     "email": "ian@iansinnott.com",
     "url": "iansinnott.com"
   },
   "engines": {
-    "node": ">=0.10.0"
+    "node": ">=4.2.0"
   },
   "scripts": {
-    "test": "xo && ava"
+    "test": "xo && ava",
+    "build": "mkdir -p dist && babel -o dist/ReactStaticPlugin.js src/index.js"
   },
   "files": [
     "index.js"
@@ -21,9 +23,21 @@
   "keywords": [
     ""
   ],
-  "dependencies": {},
+  "dependencies": {
+    "async": "^1.5.0",
+    "eval": "^0.1.1",
+    "history": "^1.17.0",
+    "react": "^0.14.5",
+    "react-dom": "^0.14.5",
+    "react-router": "^1.0.3"
+  },
   "devDependencies": {
     "ava": "^0.8.0",
+    "babel": "^6.3.26",
+    "babel-cli": "^6.3.17",
+    "babel-preset-es2015": "^6.3.13",
+    "babel-preset-react": "^6.3.13",
+    "babel-preset-stage-0": "^6.3.13",
     "xo": "^0.12.1"
   }
 }
