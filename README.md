@@ -24,7 +24,11 @@ module.exports = {
   },
 
   plugins: [
-    new ReactStaticPlugin({ src: 'app' }), // Chunk or file name
+    new ReactStaticPlugin({
+      src: 'app',             // Chunk or file name
+      bundle: '/app.js',      // Path to JS bundle
+      stylesheet: '/app.css', // Path to stylesheet (if any)
+    }),
   ],
 
   // ... other config
@@ -46,9 +50,88 @@ if (typeof document !== 'undefined')
 export default App;
 ```
 
+Now when you run `webpack` you will see `index.html` in the output. Serve it statically and open it in any browser. 
+
 ### Multi-page sites with React Router
 
-// TODO:..
+Creating sites with multiple static pages using React Router is very similar to the simple example, but instead of exporting any old React component export a `<Route />` component:
+
+```js
+// client/index.js
+import React from 'react';
+import { render } from 'react-dom';
+import { Router } from 'react-router';
+
+// Since we're rendering static files don't forget to use browser history.
+// Server's don't get the URL hash during a request.
+import createBrowserHistory from 'history/lib/createBrowserHistory';
+
+// Import your routes so that you can pass them to the <Router /> component
+import routes from './routes.js';
+
+// Only render in the browser
+if (typeof document !== 'undefined') {
+  render(
+    <Router routes={routes} history={createBrowserHistory()} />,
+    document.getElementById('root')
+  );
+}
+
+// Export the routes here so that ReactStaticPlugin can access them and build
+// the static files.
+export * from './routes.js';
+```
+
+```js
+// client/routes.js
+import React from 'react';
+import { Route } from 'react-router';
+
+import {
+  App,
+  About,
+  Products,
+  Product,
+  Contact,
+  Nested,
+} from './components';
+
+const NotFound = () => <h4>Not found 😞</h4>;
+
+export const routes = (
+  <Route path='/' title='App' component={App}>
+    <Route path='about' title='App - About' component={About} />
+    <Route path='contact' title='App - Contact' component={Contact} />
+    <Route path='products' title='App - Products' component={Products}>
+      <Route path='product' title='App - Products - Product' component={Product}>
+        <Route path='nested' title='App - Products - Product - Nested' component={Nested} />
+      </Route>
+    </Route>
+    <Route path='*' title='404: Not Found' component={NotFound} />
+  </Route>
+);
+
+export default routes;
+```
+
+**NOTE:** The `title` prop on the `<Route />` components is totally optional but recommended. It will not affect your client side app, only the `<title>` tag of the generated static HTML. 
+
+Now you will see nested HTML files int the `webpack` output. Given our router example it would look something like this:
+
+```
+                     Asset       Size  Chunks             Chunk Names
+                index.html  818 bytes          [emitted]
+                    app.js     797 kB       0  [emitted]  app
+                   app.css    8.28 kB       0  [emitted]  app
+                about.html    1.05 kB          [emitted]
+              contact.html    1.46 kB          [emitted]
+             products.html    2.31 kB          [emitted]
+      products/zephyr.html    2.45 kB          [emitted]
+products/zephyr/nomad.html    2.53 kB          [emitted]
+                  404.html  882 bytes          [emitted]
+```
+
+**NOTE:** When the plugin encounters `<Route path='*' />` it will assume that this is the 404 page and will name it `404.html`.
 
 ## API
 
@@ -111,6 +194,8 @@ Now when you `require` or `import` it you will get the local version.
 ## Roadmap
 
 - [ ] Custom HTML layout option
+- [ ] Custom 404 page filename option
+- [ ] Support for dynamic routes + data (i.e. `<Route path='post/:id' />`)
 - [ ] Improved testing
 
 ## License
