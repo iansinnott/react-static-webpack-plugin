@@ -14,7 +14,7 @@
     "node": ">=4.2.0"
   },
   "scripts": {
-    "test": "eslint src && ava",
+    "test": "eslint src && npm run build && ava",
     "watch": "babel -w -d dist src",
     "build": "mkdir -p dist && rimraf dist && babel -d dist src"
   },
@@ -26,7 +26,7 @@
     "generator"
   ],
   "dependencies": {
-    "async": "^1.5.0",
+    "async": "^1.5.1",
     "eval": "^0.1.1",
     "history": "^1.17.0",
     "lodash": "^3.10.1",
@@ -35,7 +35,7 @@
     "react-router": "^1.0.3"
   },
   "devDependencies": {
-    "ava": "^0.8.0",
+    "ava": "^0.9.1",
     "babel": "^6.3.26",
     "babel-cli": "^6.3.17",
     "babel-eslint": "^4.1.6",
@@ -46,6 +46,8 @@
     "eslint": "^1.10.3",
     "eslint-config-airbnb": "^2.1.1",
     "eslint-plugin-react": "^3.13.1",
+    "react": "^0.14.5",
+    "react-router": "^1.0.3",
     "rimraf": "^2.5.0"
   }
 }
