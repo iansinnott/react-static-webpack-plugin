@@ -5,7 +5,7 @@ _Build full static sites using React, React Router and Webpack_
 ## Install
 
 ```
-$ npm install --save react-static-webpack-plugin
+$ npm install --save-dev react-static-webpack-plugin
 ```
 
 
@@ -137,29 +137,42 @@ products/zephyr/nomad.html    2.53 kB          [emitted]
 
 ### `new ReactStaticPlugin({ ...options })`
 
-#### `src`
+#### `src` (required)
 
-Type: `string`
+**Type:** `string`
 
 The name of the chunk or file that exports your app's React Router config. Example: `'app'`
 
 #### `bundle`
 
-Type: `string`
+**Type:** `string`
 
-Path to your bundled application. Example: `'/app.js'`
+**Default:** `'/app.js'`
+
+Path to your bundled application. This is not required but you will most likely need to specify a path to your `bundle` unless it happens to be the default.
 
 #### `stylesheet`
 
-Type: `string`
+**Type:** `string`
 
-Path to your external stylesheet, if any. Example `'/app.css'`
+**Default:** `'/app.css'`
+
+Path to your external stylesheet, if any.
 
 #### `favicon`
 
-Type: `string`
+**Type:** `string`
+
+**Default:** `''`
 
 Path to your favicon, if any. Example `'/favicon.ico'`
+
+## Roadmap
+
+- [ ] Custom HTML layout option
+- [ ] Custom 404 page filename option
+- [ ] Support for dynamic routes + data (i.e. `<Route path='post/:id' />`)
+- [ ] Improved testing
 
 ## Development
 
@@ -190,13 +203,6 @@ npm link react-static-webpack-plugin
 ```
 
 Now when you `require` or `import` it you will get the local version.
-
-## Roadmap
-
-- [ ] Custom HTML layout option
-- [ ] Custom 404 page filename option
-- [ ] Support for dynamic routes + data (i.e. `<Route path='post/:id' />`)
-- [ ] Improved testing
 
 ## License
 
