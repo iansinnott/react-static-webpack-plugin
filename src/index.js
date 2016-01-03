@@ -64,7 +64,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
     }
 
     if (!isRoute(Component)) {
-      log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instaed.');
+      log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
       compilation.assets['index.html'] = renderSingleComponent(Component, this.options);
       return cb();
     }
