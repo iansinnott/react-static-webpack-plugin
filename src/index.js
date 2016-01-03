@@ -5,8 +5,12 @@ import ReactDOM from 'react-dom/server';
 import evaluate from 'eval';
 import { match, RoutingContext } from 'react-router';
 import async from 'async';
+import debug from 'debug';
 
-import getAllPaths from './getAllPaths.js';
+import pkg from '../package.json';
+const log = debug(pkg.name);
+
+import { getAllPaths } from './utils.js';
 import Html from './Html.js';
 
 /**
@@ -46,11 +50,11 @@ StaticSitePlugin.prototype.apply = function(compiler) {
     const asset = findAsset(this.options.src, compilation);
 
     if (!asset)
-      throw new Error('Output file not found: `' + this.options.src + '`');
+      throw new Error(`Output file not found: ${this.options.src}`);
 
     const routes = evaluate(asset.source()).routes;
     const paths = getAllPaths(routes);
-    console.log(paths);
+    log('Parsed routes:', paths);
 
     async.forEach(paths,
       (location, callback) => {
@@ -58,13 +62,13 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
           const body = ReactDOM.renderToString(<RoutingContext {...renderProps} />);
           const { stylesheet, favicon } = this.options;
+          const assetKey = getAssetKey(location);
           const doc = Html.renderToDocumentString({
             title: route.title,
             body,
             stylesheet,
             favicon,
           });
-          const assetKey = getAssetKey(location);
 
           compilation.assets[assetKey] = {
             source() { return doc; },
@@ -86,7 +90,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
  * @param {string} src
  * @param {Compilation} compilation
  */
-function findAsset(src, compilation) {
+const findAsset = (src, compilation) => {
   const asset = compilation.assets[src];
 
   // Found it. It was a key within assets
@@ -106,7 +110,7 @@ function findAsset(src, compilation) {
     chunkValue = chunkValue[0]; // Is the main bundle always the first element?
 
   return compilation.assets[chunkValue];
-}
+};
 
 /**
  * Given a string location (i.e. path) return a relevant HTML filename.
@@ -126,7 +130,7 @@ function findAsset(src, compilation) {
  * @param {string} location
  * @return {string} relative path to output file
  */
-function getAssetKey(location) {
+const getAssetKey = location => {
   const basename = path.basename(location);
   const dirname = path.dirname(location).slice(1); // See NOTE above
   let filename;
@@ -139,6 +143,6 @@ function getAssetKey(location) {
     filename = basename + '.html';
 
   return dirname ? (dirname + path.sep + filename) : filename;
-}
+};
 
 module.exports = StaticSitePlugin;

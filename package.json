@@ -15,7 +15,8 @@
   },
   "scripts": {
     "test": "eslint src && ava",
-    "build": "mkdir -p dist && babel -d dist src"
+    "watch": "babel -w -d dist src",
+    "build": "mkdir -p dist && rimraf dist && babel -d dist src"
   },
   "keywords": [
     "react",
@@ -41,8 +42,10 @@
     "babel-preset-es2015": "^6.3.13",
     "babel-preset-react": "^6.3.13",
     "babel-preset-stage-0": "^6.3.13",
+    "debug": "^2.2.0",
     "eslint": "^1.10.3",
     "eslint-config-airbnb": "^2.1.1",
-    "eslint-plugin-react": "^3.13.1"
+    "eslint-plugin-react": "^3.13.1",
+    "rimraf": "^2.5.0"
   }
 }
