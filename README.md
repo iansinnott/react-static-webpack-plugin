@@ -11,7 +11,10 @@ $ npm install --save react-static-webpack-plugin
 
 ## Usage
 
+### Simple Example
+
 ```js
+// webpack.config.js
 const ReactStaticPlugin = require('react-static-webpack-plugin');
 
 module.exports = {
@@ -28,6 +31,24 @@ module.exports = {
 
 };
 ```
+
+```js
+// client/index.js
+import React from 'react';
+import { render } from 'react-dom';
+import App from './components/App.js';
+
+// Don't try to render unless we're in the browser
+if (typeof document !== 'undefined')
+  render(<App />, document.getElementById('root'));
+
+// Be sure to export the React component so that it can be statically rendered
+export default App;
+```
+
+### Multi-page sites with React Router
+
+// TODO:..
 
 ## API
 
