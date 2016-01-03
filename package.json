@@ -17,7 +17,7 @@
     "test": "eslint src && npm run build && ava",
     "watch": "babel -w -d dist src",
     "clean": "rimraf dist",
-    "build": "mkdir dist && npm run clean && babel -d dist src",
+    "build": "mkdir -p dist && npm run clean && babel -d dist src",
     "bump:patch": "npm version patch -m \"%s\"",
     "bump:minor": "npm version minor -m \"%s\"",
     "bump": "npm run bump:patch",
