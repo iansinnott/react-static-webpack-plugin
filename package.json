@@ -1,6 +1,6 @@
 {
   "name": "react-static-webpack-plugin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Build full static sites using React, React Router and Webpack",
   "license": "MIT",
   "repository": "iansinnott/react-static-webpack-plugin",
@@ -16,7 +16,14 @@
   "scripts": {
     "test": "eslint src && npm run build && ava",
     "watch": "babel -w -d dist src",
-    "build": "mkdir -p dist && rimraf dist && babel -d dist src"
+    "clean": "rimraf dist",
+    "build": "mkdir dist && npm run clean && babel -d dist src",
+    "bump:patch": "npm version patch -m \"%s\"",
+    "bump:minor": "npm version minor -m \"%s\"",
+    "bump": "npm run bump:patch",
+    "preversion": "npm test",
+    "postversion": "git push && git push --tags",
+    "prepublish": "npm run build"
   },
   "keywords": [
     "react",
@@ -30,6 +37,7 @@
     "eval": "^0.1.1",
     "history": "^1.17.0",
     "lodash": "^3.10.1",
+    "debug": "^2.2.0",
     "react": "^0.14.5",
     "react-dom": "^0.14.5",
     "react-router": "^1.0.3"
@@ -42,12 +50,9 @@
     "babel-preset-es2015": "^6.3.13",
     "babel-preset-react": "^6.3.13",
     "babel-preset-stage-0": "^6.3.13",
-    "debug": "^2.2.0",
     "eslint": "^1.10.3",
     "eslint-config-airbnb": "^2.1.1",
     "eslint-plugin-react": "^3.13.1",
-    "react": "^0.14.5",
-    "react-router": "^1.0.3",
     "rimraf": "^2.5.0"
   }
 }
