@@ -7,8 +7,8 @@ import { match, RoutingContext } from 'react-router';
 import async from 'async';
 import debug from 'debug';
 
-import pkg from '../package.json';
-const log = debug(pkg.name);
+import { name as packageName } from '../package.json';
+const log = debug(packageName);
 
 import { getAllPaths } from './utils.js';
 import Html from './Html.js';
@@ -20,7 +20,8 @@ import Html from './Html.js';
  *
  * Usage:
  *
- * new StaticSitePlugin({ in: 'client/routes.js', out: 'public', ...options }),
+ *   new StaticSitePlugin({ src: 'client/routes.js', ...options }),
+ *
  */
 
 function StaticSitePlugin(options) {
@@ -52,13 +53,29 @@ StaticSitePlugin.prototype.apply = function(compiler) {
     if (!asset)
       throw new Error(`Output file not found: ${this.options.src}`);
 
-    const routes = evaluate(asset.source()).routes;
-    const paths = getAllPaths(routes);
+    const source = evaluate(asset.source());
+    const Component = source.routes || source;
+    log('src evaluated to Component:', Component);
+
+    // NOTE: If Symbol(react.element) was removed this would no longer work
+    if (!isValidComponent(Component)) {
+      log('Component was invalid. Throwing error.');
+      throw new Error(`${packageName} -- options.src entry point must export a valid React Component.`);
+    }
+
+    if (!isRoute(Component)) {
+      log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instaed.');
+      log(typeof Component.type);
+      compilation.assets['index.html'] = renderSingleComponent(Component, this.options);
+      return cb();
+    }
+
+    const paths = getAllPaths(Component);
     log('Parsed routes:', paths);
 
     async.forEach(paths,
       (location, callback) => {
-        match({ routes, location }, (error, redirectLocation, renderProps) => {
+        match({ routes: Component, location }, (error, redirectLocation, renderProps) => {
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
           const body = ReactDOM.renderToString(<RoutingContext {...renderProps} />);
           const { stylesheet, favicon } = this.options;
@@ -143,6 +160,60 @@ const getAssetKey = location => {
     filename = basename + '.html';
 
   return dirname ? (dirname + path.sep + filename) : filename;
+};
+
+/**
+ * Test if a React Element is a React Router Route or not. Note that this tests
+ * the actual object (i.e. React Element), not a constructor. As such we
+ * immediately deconstruct out the type property as that is what we want to
+ * test.
+ *
+ * NOTE: Testing whether Component.type was an instanceof Route did not work.
+ *
+ * NOTE: This is a fragile test. The React Router API is notorious for
+ * introducing breaking changes, so of the RR team changed the manditory path
+ * and component props this would fail.
+ */
+const isRoute = ({ type: component }) =>
+  component && component.propTypes.path && component.propTypes.component;
+
+/**
+ * Test if a component is a valid React component.
+ *
+ * NOTE: This is a pretty wonky test. React.createElement wasn't doing it for
+ * me. It seemed to be giving false positives.
+ *
+ * @param {any} component
+ * @return {boolean}
+ */
+const isValidComponent = Component => {
+  const { type } = React.createElement(Component);
+  return typeof type === 'object' || typeof type === 'function';
+};
+
+/**
+ * If not provided with any React Router Routes we try to render whatever asset
+ * was passed to the plugin as a React component. The use case would be anyone
+ * who doesn't need/want to add RR as a dependency to their app and instead only
+ * wants a single HTML file output.
+ *
+ * NOTE: In the case of a single component we use the static prop 'title' to get
+ * the page title. If this is not provided then the title will default to
+ * whatever is provided in the template.
+ */
+const renderSingleComponent = (Component, options) => {
+  const body = ReactDOM.renderToString(<Component />);
+  const { stylesheet, favicon } = options;
+  const doc = Html.renderToDocumentString({
+    title: Component.title, // See NOTE
+    body,
+    stylesheet,
+    favicon,
+  });
+  return {
+    source() { return doc; },
+    size() { return doc.length; },
+  };
 };
 
 module.exports = StaticSitePlugin;
