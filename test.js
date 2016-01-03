@@ -3,6 +3,10 @@ import test from 'ava';
 import React from 'react';
 import { Route, Link, IndexRoute } from 'react-router';
 
+/**
+ * NOTE: Ava does not pass imported source through babel so trying to import
+ * ./src/**  will thrown an error as Node 4.x does not support imports
+ */
 import { getAllPaths } from './dist/utils.js';
 
 // This seems like potentiall a viable solution. Simply pass the nescessary data
