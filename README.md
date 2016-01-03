@@ -108,6 +108,11 @@ npm link react-static-webpack-plugin
 
 Now when you `require` or `import` it you will get the local version.
 
+## Roadmap
+
+- [ ] Custom HTML layout option
+- [ ] Improved testing
+
 ## License
 
 MIT © [Ian Sinnott](http://iansinnott.com)
