@@ -23,6 +23,13 @@ module.exports = {
     app: ['./client/index.js'],
   },
 
+  output: {
+    path: path.join(__dirname, 'public'),
+    filename: '[name].js',                
+    libraryTarget: 'umd', // IMPORTANT! You must output to UMD for the plugin to work
+    publicPath: '/',
+  },
+
   plugins: [
     new ReactStaticPlugin({
       src: 'app',             // Chunk or file name
