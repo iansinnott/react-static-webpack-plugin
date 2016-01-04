@@ -2,12 +2,13 @@
 
 _Build full static sites using React, React Router and Webpack_
 
+> This module can be added to exiting projects, but if you're looking to start coding right now check out the [React Static Boilerplate][boilerplate].
+
 ## Install
 
 ```
 $ npm install --save-dev react-static-webpack-plugin
 ```
-
 
 ## Usage
 
@@ -140,6 +141,10 @@ products/zephyr/nomad.html    2.53 kB          [emitted]
 
 **NOTE:** When the plugin encounters `<Route path='*' />` it will assume that this is the 404 page and will name it `404.html`.
 
+### Full Example
+
+For a full example you can run locally see the [React Static Boilerplate][boilerplate].
+
 ## API
 
 ### `new ReactStaticPlugin({ ...options })`
@@ -210,6 +215,8 @@ npm link react-static-webpack-plugin
 ```
 
 Now when you `require` or `import` it you will get the local version.
+
+[boilerplate]: https://github.com/iansinnott/react-static-boilerplate
 
 ## License
 
