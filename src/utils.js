@@ -1,6 +1,11 @@
-import { IndexRoute } from 'react-router';
-import { isArray } from 'lodash/lang';
+import { isArray, isUndefined } from 'lodash/lang';
 import { flattenDeep } from 'lodash/array';
+
+/**
+ * This is not a very sophisticated checking method. Assuming we already know
+ * this is either a Route or an IndexRoute under what cases would this break?
+ */
+const isIndexRoute = route => isUndefined(route.props.path);
 
 /**
  * NOTE: We could likely use createRoutes to our advantage here. It may simplify
@@ -27,7 +32,7 @@ export const getNestedPaths = (route, prefix = '') => {
   if (isArray(route)) return route.map(x => getNestedPaths(x, prefix));
 
   // Index routes don't represent a distinct path, so we don't count them
-  if (route.type === IndexRoute) return [];
+  if (isIndexRoute(route)) return [];
 
   const path = prefix + route.props.path;
   const nextPrefix = path === '/' ? path : path + '/';
