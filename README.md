@@ -145,6 +145,21 @@ products/zephyr/nomad.html    2.53 kB          [emitted]
 
 For a full example you can run locally see the [React Static Boilerplate][boilerplate].
 
+## Current Limitations
+
+This plugin does not currently support all the functionality of react router.
+Most notably it does not support dynamic route paths. For example:
+
+```
+<Route path='blog' component={Blog}>
+  <Route path=':id' component={Post} />
+</Route>
+```
+
+In a standard single page app when you hit the `Post` component you would probably look at the ID in the URL and fetch the appropriate post. However, to build static files we need all data available to us at the time of compilation, and in this case I have yet to come up with a clever way of passing dynamic data to the plugin and correctly mapping it to HTML files.
+
+I have some thoughts on this and am actively exploring how it might work but nothing has been implemented yet. If you have any thoughts on what this might look like please [open an issue](issues) and let me know!
+
 ## API
 
 ### `new ReactStaticPlugin({ ...options })`
