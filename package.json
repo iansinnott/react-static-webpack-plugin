@@ -34,10 +34,10 @@
   ],
   "dependencies": {
     "async": "^1.5.1",
+    "debug": "^2.2.0",
     "eval": "^0.1.1",
     "history": "^1.17.0",
     "lodash": "^3.10.1",
-    "debug": "^2.2.0",
     "react": "^0.14.5",
     "react-dom": "^0.14.5",
     "react-router": "^1.0.3"

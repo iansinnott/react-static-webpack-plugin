@@ -11,12 +11,10 @@ import { name as packageName } from '../package.json';
 const log = debug(packageName);
 
 import { getAllPaths } from './utils.js';
-import Html from './Html.js';
+import { render } from './Html.js';
 
 /**
- * We are running in this host system's node env. So all node goes but be aware
- * of the version number if using ES6. Of coures this module itself could be
- * compiled with babel.
+ * All source will be compiled with babel so ES6 goes
  *
  * Usage:
  *
@@ -26,6 +24,9 @@ import Html from './Html.js';
 
 function StaticSitePlugin(options) {
   this.options = options;
+  this.render = this.options.template
+    ? require(path.resolve(this.options.template))
+    : render;
 }
 
 /**
@@ -42,7 +43,6 @@ function StaticSitePlugin(options) {
  * Then set the document title to the title defined on that route
  *
  * TODO:
- * - Allow defining a custom JSX template instead of the built-in Html.js
  * - Allow passing a function for title?
  *
  */
@@ -65,7 +65,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 
     if (!isRoute(Component)) {
       log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
-      compilation.assets['index.html'] = renderSingleComponent(Component, this.options);
+      compilation.assets['index.html'] = renderSingleComponent(Component, this.options, this.render);
       return cb();
     }
 
@@ -77,13 +77,14 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         match({ routes: Component, location }, (error, redirectLocation, renderProps) => {
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
           const body = ReactDOM.renderToString(<RoutingContext {...renderProps} />);
-          const { stylesheet, favicon } = this.options;
+          const { stylesheet, favicon, bundle } = this.options;
           const assetKey = getAssetKey(location);
-          const doc = Html.renderToDocumentString({
+          const doc = this.render({
             title: route.title,
             body,
             stylesheet,
             favicon,
+            bundle,
           });
 
           compilation.assets[assetKey] = {
@@ -200,15 +201,17 @@ const isValidComponent = Component => {
  * the page title. If this is not provided then the title will default to
  * whatever is provided in the template.
  */
-const renderSingleComponent = (Component, options) => {
+const renderSingleComponent = (Component, options, render) => { // eslint-disable-line no-shadow
   const body = ReactDOM.renderToString(<Component />);
-  const { stylesheet, favicon } = options;
-  const doc = Html.renderToDocumentString({
+  const { stylesheet, favicon, bundle } = options;
+  const doc = render({
     title: Component.title, // See NOTE
     body,
     stylesheet,
     favicon,
+    bundle,
   });
+
   return {
     source() { return doc; },
     size() { return doc.length; },
