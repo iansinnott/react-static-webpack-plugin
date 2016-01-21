@@ -196,6 +196,38 @@ Path to your external stylesheet, if any.
 
 Path to your favicon, if any. Example `'/favicon.ico'`
 
+#### `template`
+
+**Type:** `string`
+
+**Default:** `null`
+
+Path to the file that exports your template function. Example: `./template.js`
+
+With this option you can provide the path to a custom function that will render the layout for your static pages. The function will be passed an options object that will give you access to the page title and the rendered component:
+
+```js
+// template.js
+module.exports = function(opts) {
+  return `
+<!doctype html>
+<html lang='en'>
+  <head>
+    <title>${opts.title}</title>
+  </head>
+  <body>
+    <div id='root'>
+      ${body}
+    </div>
+    <script src='/app.js' />
+  </body>
+</html>
+  `.trim();
+}
+```
+
+**NOTE:** This example will only work if the version of Node you're running supports template strings. If not, you can use concatenation or any third party library.
+
 ## Roadmap
 
 - [ ] Custom HTML layout option
