@@ -230,9 +230,9 @@ module.exports = function(opts) {
 
 ## Roadmap
 
-- [ ] Custom HTML layout option
-- [ ] Custom 404 page filename option
+- [x] Custom HTML layout option
 - [ ] Support for dynamic routes + data (i.e. `<Route path='post/:id' />`)
+- [ ] Custom 404 page filename option
 - [ ] Improved testing
 
 ## Development
