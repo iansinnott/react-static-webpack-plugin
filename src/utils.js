@@ -1,11 +1,22 @@
-import { isArray, isUndefined } from 'lodash/lang';
-import { flattenDeep } from 'lodash/array';
+import isArray from 'lodash/isArray';
+import isUndefined from 'lodash/isUndefined';
+import flattenDeep from 'lodash/flattenDeep';
+import debug from 'debug';
+
+import { name as packageName } from '../package.json';
+
+/**
+ * A simple debug logger
+ */
+export const log = debug(packageName);
 
 /**
  * This is not a very sophisticated checking method. Assuming we already know
  * this is either a Route or an IndexRoute under what cases would this break?
  */
-const isIndexRoute = route => isUndefined(route.props.path);
+const hasNoComponent = route => {
+  return isUndefined(route.props.path) || isUndefined(route.props.component);
+};
 
 /**
  * NOTE: We could likely use createRoutes to our advantage here. It may simplify
@@ -31,8 +42,9 @@ export const getNestedPaths = (route, prefix = '') => {
 
   if (isArray(route)) return route.map(x => getNestedPaths(x, prefix));
 
-  // Index routes don't represent a distinct path, so we don't count them
-  if (isIndexRoute(route)) return [];
+  // Some routes such as redirects or index routes do not have a component. Skip
+  // them.
+  if (hasNoComponent(route)) return [];
 
   const path = prefix + route.props.path;
   const nextPrefix = path === '/' ? path : path + '/';

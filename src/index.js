@@ -5,12 +5,9 @@ import ReactDOM from 'react-dom/server';
 import evaluate from 'eval';
 import { match, RoutingContext } from 'react-router';
 import async from 'async';
-import debug from 'debug';
 
 import { name as packageName } from '../package.json';
-const log = debug(packageName);
-
-import { getAllPaths } from './utils.js';
+import { getAllPaths, log } from './utils.js';
 import { render } from './Html.js';
 
 /**
@@ -42,6 +39,11 @@ function StaticSitePlugin(options) {
  *
  * Then set the document title to the title defined on that route
  *
+ * NOTE: Sometimes when matching routes we do not get an error but nore do we
+ * get renderProps. In my experience this usually means we hit an IndexRedirect
+ * or some form of Route that doesn't actually have a component to render. In
+ * these cases we simply keep on moving and don't render anything.
+ *
  * TODO:
  * - Allow passing a function for title?
  *
@@ -53,7 +55,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
     if (!asset)
       throw new Error(`Output file not found: ${this.options.src}`);
 
-    const source = evaluate(asset.source());
+    const source = evaluate(asset.source(), true);
     const Component = source.routes || source;
     log('src evaluated to Component:', Component);
 
@@ -74,7 +76,13 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 
     async.forEach(paths,
       (location, callback) => {
-        match({ routes: Component, location }, (error, redirectLocation, renderProps) => {
+        match({ routes: Component, location }, (err, redirectLocation, renderProps) => {
+          // Skip if something goes wrong. See NOTE above.
+          if (err || !renderProps) {
+            log('Error matching route', err, renderProps);
+            return callback();
+          }
+
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
           const body = ReactDOM.renderToString(<RoutingContext {...renderProps} />);
           const { stylesheet, favicon, bundle } = this.options;

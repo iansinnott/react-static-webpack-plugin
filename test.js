@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import test from 'ava';
 import React from 'react';
-import { Route, Link, IndexRoute } from 'react-router';
+import { Route, Link, IndexRoute, Redirect, IndexRedirect } from 'react-router';
 
 /**
  * NOTE: Ava does not pass imported source through babel so trying to import
@@ -97,6 +97,16 @@ const routes3 = (
   </Route>
 );
 
+const routes4 = (
+  <Route path='/' component={Layout}>
+    <IndexRedirect to='about' />
+    <Redirect from='abt' to='about' />
+    <Route path='about' component={About} />
+    <Route path='products' component={Products} />
+    <Route path='contact' component={Contact} />
+  </Route>
+);
+
 test('getAllPaths', t => {
   t.same(getAllPaths(routes1), [
     '/',
@@ -119,5 +129,13 @@ test('getAllPaths', t => {
     '/products',
     '/products/zephyr',
     '/products/zephyr/nomad',
+  ]);
+
+  // Testing IndexRedirect
+  t.same(getAllPaths(routes4), [
+    '/', // This is not a real route, but it will be detected anyway b/c of Layout
+    '/about',
+    '/products',
+    '/contact',
   ]);
 });
