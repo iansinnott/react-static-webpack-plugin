@@ -12,7 +12,7 @@ export const Html = ({
     <head>
       <meta charSet='utf-8' />
       <meta httpEquiv='X-UA-Compatible' content='IE=edge' />
-      <meta name='viewport' content='width=device-width, initial-scale=1' />
+      <meta name='viewport' content='width=device-width, minimum-scale=1.0' />
       <title>{title}</title>
       {favicon && <link rel='shortcut icon' href={favicon} />}
       {stylesheet && <link rel='stylesheet' href={stylesheet} />}
