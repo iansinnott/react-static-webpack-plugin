@@ -16,7 +16,7 @@ $ npm install --save-dev react-static-webpack-plugin
 
 ```js
 // webpack.config.js
-const ReactStaticPlugin = require('react-static-webpack-plugin');
+const StaticSitePlugin = require('react-static-webpack-plugin');
 
 module.exports = {
 
@@ -32,7 +32,7 @@ module.exports = {
   },
 
   plugins: [
-    new ReactStaticPlugin({
+    new StaticSitePlugin({
       src: 'app',             // Chunk or file name
       bundle: '/app.js',      // Path to JS bundle
       stylesheet: '/app.css', // Path to stylesheet (if any)
@@ -58,7 +58,7 @@ if (typeof document !== 'undefined')
 export default App;
 ```
 
-Now when you run `webpack` you will see `index.html` in the output. Serve it statically and open it in any browser. 
+Now when you run `webpack` you will see `index.html` in the output. Serve it statically and open it in any browser.
 
 ### Multi-page sites with React Router
 
@@ -85,7 +85,7 @@ if (typeof document !== 'undefined') {
   );
 }
 
-// Export the routes here so that ReactStaticPlugin can access them and build
+// Export the routes here so that StaticSitePlugin can access them and build
 // the static files.
 export * from './routes.js';
 ```
@@ -122,7 +122,7 @@ export const routes = (
 export default routes;
 ```
 
-**NOTE:** The `title` prop on the `<Route />` components is totally optional but recommended. It will not affect your client side app, only the `<title>` tag of the generated static HTML. 
+**NOTE:** The `title` prop on the `<Route />` components is totally optional but recommended. It will not affect your client side app, only the `<title>` tag of the generated static HTML.
 
 Now you will see nested HTML files int the `webpack` output. Given our router example it would look something like this:
 
@@ -164,7 +164,7 @@ I have some thoughts on this and am actively exploring how it might work but not
 
 ## API
 
-### `new ReactStaticPlugin({ ...options })`
+### `new StaticSitePlugin({ ...options })`
 
 #### `src` (required)
 
