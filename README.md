@@ -1,5 +1,9 @@
 # React Static Webpack Plugin
 
+[![Build Status](https://img.shields.io/circleci/project/iansinnott/react-static-webpack-plugin.svg)](https://circleci.com/gh/iansinnott/react-static-webpack-plugin)
+[![react-string-replace.js on NPM](https://img.shields.io/npm/v/react-static-webpack-plugin.svg)](https://www.npmjs.com/package/react-static-webpack-plugin)
+
+
 _Build full static sites using React, React Router and Webpack_
 
 > This module can be added to exiting projects, but if you're looking to start coding right now check out the [React Static Boilerplate][boilerplate].
