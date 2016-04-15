@@ -108,13 +108,13 @@ const routes4 = (
 );
 
 test('getAllPaths', t => {
-  t.same(getAllPaths(routes1), [
+  t.deepEqual(getAllPaths(routes1), [
     '/',
     '/about',
     '/products',
     '/contact',
   ]);
-  t.same(getAllPaths(routes2), [
+  t.deepEqual(getAllPaths(routes2), [
     '/',
     '/about',
     '/products',
@@ -123,7 +123,7 @@ test('getAllPaths', t => {
     '/products/jarvis',
     '/contact',
   ]);
-  t.same(getAllPaths(routes3), [
+  t.deepEqual(getAllPaths(routes3), [
     '/',
     '/about',
     '/products',
@@ -132,7 +132,7 @@ test('getAllPaths', t => {
   ]);
 
   // Testing IndexRedirect
-  t.same(getAllPaths(routes4), [
+  t.deepEqual(getAllPaths(routes4), [
     '/', // This is not a real route, but it will be detected anyway b/c of Layout
     '/about',
     '/products',
