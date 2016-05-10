@@ -11,14 +11,16 @@
     "url": "iansinnott.com"
   },
   "engines": {
-    "node": ">=4.2.0"
+    "node": ">=5.0.0"
   },
   "scripts": {
     "test": "eslint src && npm run build && ava --verbose",
+    "test:unit": "ava --verbose",
     "watch": "babel -w -d dist src",
     "start": "npm run watch",
     "clean": "rimraf dist",
-    "build": "mkdir -p dist && npm run clean && babel -d dist src",
+    "build": "mkdir -p dist && npm run clean && npm run build:compile",
+    "build:compile": "babel -d dist src",
     "bump:patch": "npm version patch -m \"v%s\"",
     "bump:minor": "npm version minor -m \"v%s\"",
     "bump": "npm run bump:patch",
@@ -27,6 +29,9 @@
     "prepublish": "npm run build"
   },
   "ava": {
+    "require": [
+      "babel-register"
+    ],
     "babel": "inherit"
   },
   "keywords": [
@@ -54,6 +59,7 @@
     "babel-preset-es2015": "^6.3.13",
     "babel-preset-react": "^6.3.13",
     "babel-preset-stage-0": "^6.3.13",
+    "babel-register": "^6.8.0",
     "eslint": "^1.10.3",
     "eslint-config-airbnb": "^2.1.1",
     "eslint-plugin-react": "^3.13.1",
