@@ -12,6 +12,10 @@
     // Indent 2 spaces always
     "indent": [2, 2],
 
+    "func-names": [0],
+
+    "no-use-before-define": [2, "nofunc"],
+
     // Omitting curly braces is fine as long as there is only one line under the
     // statement
     "curly": [2, "multi-or-nest"],
