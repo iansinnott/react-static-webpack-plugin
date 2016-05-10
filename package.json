@@ -16,6 +16,7 @@
   "scripts": {
     "test": "eslint src && npm run build && ava --verbose",
     "watch": "babel -w -d dist src",
+    "start": "npm run watch",
     "clean": "rimraf dist",
     "build": "mkdir -p dist && npm run clean && babel -d dist src",
     "bump:patch": "npm version patch -m \"v%s\"",
