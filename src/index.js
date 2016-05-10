@@ -1,4 +1,4 @@
-/* eslint-disable no-use-before-define, func-names */
+/* @flow */
 import path from 'path';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
@@ -19,7 +19,15 @@ import { render } from './Html.js';
  *
  */
 
-function StaticSitePlugin(options) {
+type Options = {
+  src: string,
+  bundle?: string,
+  stylesheet?: string,
+  favicon?: string,
+  template?: string,
+}
+
+function StaticSitePlugin(options: Options) {
   this.options = options;
   this.render = this.options.template
     ? require(path.resolve(this.options.template))
@@ -115,7 +123,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
  * @param {string} src
  * @param {Compilation} compilation
  */
-const findAsset = (src, compilation) => {
+function findAsset(src, compilation) {
   const asset = compilation.assets[src];
 
   // Found it. It was a key within assets
@@ -135,7 +143,7 @@ const findAsset = (src, compilation) => {
     chunkValue = chunkValue[0]; // Is the main bundle always the first element?
 
   return compilation.assets[chunkValue];
-};
+}
 
 /**
  * Given a string location (i.e. path) return a relevant HTML filename.
@@ -151,11 +159,8 @@ const findAsset = (src, compilation) => {
  * results in a '/*' location. In this case we output 404.html, since it's
  * assumed that this is a 404 route. See the RR changelong for details:
  * https://github.com/rackt/react-router/blob/1.0.x/CHANGES.md#notfound-route
- *
- * @param {string} location
- * @return {string} relative path to output file
  */
-const getAssetKey = location => {
+function getAssetKey(location: string): string {
   const basename = path.basename(location);
   const dirname = path.dirname(location).slice(1); // See NOTE above
   let filename;
@@ -168,7 +173,7 @@ const getAssetKey = location => {
     filename = basename + '.html';
 
   return dirname ? (dirname + path.sep + filename) : filename;
-};
+}
 
 /**
  * Test if a React Element is a React Router Route or not. Note that this tests
@@ -182,8 +187,9 @@ const getAssetKey = location => {
  * introducing breaking changes, so of the RR team changed the manditory path
  * and component props this would fail.
  */
-const isRoute = ({ type: component }) =>
-  component && component.propTypes.path && component.propTypes.component;
+function isRoute({ type: component }): boolean {
+  return component && component.propTypes.path && component.propTypes.component;
+}
 
 /**
  * Test if a component is a valid React component.
@@ -194,10 +200,10 @@ const isRoute = ({ type: component }) =>
  * @param {any} component
  * @return {boolean}
  */
-const isValidComponent = Component => {
+function isValidComponent(Component): boolean {
   const { type } = React.createElement(Component);
   return typeof type === 'object' || typeof type === 'function';
-};
+}
 
 /**
  * If not provided with any React Router Routes we try to render whatever asset
@@ -209,7 +215,7 @@ const isValidComponent = Component => {
  * the page title. If this is not provided then the title will default to
  * whatever is provided in the template.
  */
-const renderSingleComponent = (Component, options, render) => { // eslint-disable-line no-shadow
+function renderSingleComponent(Component, options, render) { // eslint-disable-line no-shadow
   const body = ReactDOM.renderToString(<Component />);
   const { stylesheet, favicon, bundle } = options;
   const doc = render({
@@ -224,6 +230,6 @@ const renderSingleComponent = (Component, options, render) => { // eslint-disabl
     source() { return doc; },
     size() { return doc.length; },
   };
-};
+}
 
 module.exports = StaticSitePlugin;
