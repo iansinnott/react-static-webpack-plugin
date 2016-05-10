@@ -7,7 +7,7 @@ import { Route, Link, IndexRoute, Redirect, IndexRedirect } from 'react-router';
  * NOTE: Ava does not pass imported source through babel so trying to import
  * ./src/**  will thrown an error as Node 4.x does not support imports
  */
-import { getAllPaths } from './dist/utils.js';
+import { getAllPaths } from './src/utils.js';
 
 // This seems like potentiall a viable solution. Simply pass the nescessary data
 // in a `data` prop directly to the component. The type should likely be an
