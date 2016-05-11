@@ -1,6 +1,5 @@
 /* eslint-disable no-var */
 var path = require('path');
-var webpack = require('webpack');
 
 var StaticSitePlugin = require('../dist');
 
