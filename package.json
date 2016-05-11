@@ -14,7 +14,8 @@
     "node": ">=5.0.0"
   },
   "scripts": {
-    "test": "eslint src && npm run build && ava --verbose",
+    "lint": "eslint src example",
+    "test": "npm run lint && npm run build && ava --verbose",
     "test:unit": "ava --verbose",
     "watch": "babel -w -d dist src",
     "start": "npm run watch",
