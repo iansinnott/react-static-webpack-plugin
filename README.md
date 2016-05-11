@@ -30,7 +30,7 @@ module.exports = {
 
   output: {
     path: path.join(__dirname, 'public'),
-    filename: '[name].js',                
+    filename: '[name].js',
     libraryTarget: 'umd', // IMPORTANT! You must output to UMD for the plugin to work
     publicPath: '/',
   },
@@ -235,9 +235,9 @@ module.exports = function(opts) {
 ## Roadmap
 
 - [x] Custom HTML layout option
+- [x] Improved testing
 - [ ] Support for dynamic routes + data (i.e. `<Route path='post/:id' />`)
 - [ ] Custom 404 page filename option
-- [ ] Improved testing
 
 ## Development
 
