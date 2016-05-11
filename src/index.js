@@ -60,8 +60,9 @@ StaticSitePlugin.prototype.apply = function(compiler) {
   compiler.plugin('emit', (compilation, cb) => {
     const asset = findAsset(this.options.src, compilation);
 
-    if (!asset)
+    if (!asset) {
       throw new Error(`Output file not found: ${this.options.src}`);
+    }
 
     const source = evaluate(asset.source(), true);
     const Component = source.routes || source;
@@ -139,8 +140,9 @@ function findAsset(src, compilation) {
   if (!chunkValue) return null;
 
   // Webpack outputs an array for each chunk when using sourcemaps
-  if (chunkValue instanceof Array)
+  if (chunkValue instanceof Array) {
     chunkValue = chunkValue[0]; // Is the main bundle always the first element?
+  }
 
   return compilation.assets[chunkValue];
 }
@@ -165,12 +167,13 @@ function getAssetKey(location: string): string {
   const dirname = path.dirname(location).slice(1); // See NOTE above
   let filename;
 
-  if (!basename || location.slice(-1) === '/')
+  if (!basename || location.slice(-1) === '/') {
     filename = 'index.html';
-  else if (basename === '*')
+  } else if (basename === '*') {
     filename = '404.html';
-  else
+  } else {
     filename = basename + '.html';
+  }
 
   return dirname ? (dirname + path.sep + filename) : filename;
 }
