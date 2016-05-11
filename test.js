@@ -107,7 +107,7 @@ const routes4 = (
   </Route>
 );
 
-test('getAllPaths', t => {
+test('Can get all paths from routes using getAllPaths', t => {
   t.deepEqual(getAllPaths(routes1), [
     '/',
     '/about',
