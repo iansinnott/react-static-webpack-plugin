@@ -15,7 +15,7 @@
   },
   "scripts": {
     "lint": "eslint src example/*.js ./example/src",
-    "test": "npm run lint && npm run build && ava --verbose",
+    "test": "npm run lint && npm run build && npm run test:unit",
     "test:unit": "ava --verbose test.js example/test.js",
     "watch": "babel -w -d dist src",
     "start": "npm run watch",
@@ -48,9 +48,9 @@
     "eval": "^0.1.1",
     "history": "^1.17.0",
     "lodash": "^4.11.1",
-    "react": "^0.14.8",
-    "react-dom": "^0.14.8",
-    "react-router": "^1.0.3"
+    "react": "^15.0.2",
+    "react-dom": "^15.0.2",
+    "react-router": "^2.4.0"
   },
   "devDependencies": {
     "ava": "^0.14.0",

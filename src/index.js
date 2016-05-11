@@ -3,7 +3,7 @@ import path from 'path';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
 import evaluate from 'eval';
-import { match, RoutingContext } from 'react-router';
+import { match, RouterContext } from 'react-router';
 import async from 'async';
 
 import { name as packageName } from '../package.json';
@@ -93,7 +93,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           }
 
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-          const body = ReactDOM.renderToString(<RoutingContext {...renderProps} />);
+          const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
           const { stylesheet, favicon, bundle } = this.options;
           const assetKey = getAssetKey(location);
           const doc = this.render({
