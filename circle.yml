@@ -3,7 +3,7 @@ machine:
   node:
     version: 5.11.1
 
-## Customize dependencies
+## Install example deps as well so that we can run tests there
 dependencies:
-  pre:
+  post:
     - (cd example; npm install)
