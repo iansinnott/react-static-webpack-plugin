@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "babel-core": "^6.8.0",
     "babel-loader": "^6.2.4",
     "react": "^15.0.2",
     "react-router": "^2.4.0",
