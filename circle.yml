@@ -1,0 +1,9 @@
+## Customize machine
+machine:
+  node:
+    version: 5.11.1
+
+## Customize dependencies
+dependencies:
+  pre:
+    - (cd example; npm install)
