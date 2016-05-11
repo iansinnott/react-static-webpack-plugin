@@ -16,10 +16,6 @@
 
     "no-use-before-define": [2, "nofunc"],
 
-    // Omitting curly braces is fine as long as there is only one line under the
-    // statement
-    "curly": [2, "multi-or-nest"],
-
     // Console can be useful and can also be stripped about by webpack in prod
     "no-console": [0],
 
