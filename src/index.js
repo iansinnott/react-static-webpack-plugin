@@ -94,7 +94,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
           const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
-          const { stylesheet, favicon, bundle } = this.options;
+          const { stylesheet, favicon, bundle } = addHash(this.options, compilation.hash);
           const assetKey = getAssetKey(location);
           const doc = this.render({
             title: route.title,
@@ -145,6 +145,23 @@ function findAsset(src, compilation) {
   }
 
   return compilation.assets[chunkValue];
+}
+
+
+/**
+ * Add hash to all options that includes '[hash]' ex: bundle.[hash].js 
+ * NOTE: Only one hash for all files. So even if the css did not change it will get a new hash if the js changed. 
+ *
+ * @param {Options} options
+ * @param {string}  hash
+ */
+function addHash(options, hash) {
+
+  return Object.keys(options).reduce((previous, current) => {
+    previous[current] = (options[current] && hash ? options[current].replace('[hash]', hash) : options[current]);
+    return previous;
+  }, {});
+					   
 }
 
 /**
