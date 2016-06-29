@@ -14,8 +14,8 @@ export const Html = ({
       <meta httpEquiv='X-UA-Compatible' content='IE=edge' />
       <meta name='viewport' content='width=device-width, minimum-scale=1.0' />
       <title>{title}</title>
-      {favicon && <link rel='shortcut icon' href={favicon} />}
-      {stylesheet && <link rel='stylesheet' href={stylesheet} />}
+      {favicon ? <link rel='shortcut icon' href={favicon} /> : null}
+      {stylesheet ? <link rel='stylesheet' href={stylesheet} /> : null}
     </head>
     <body>
       <div id='root' dangerouslySetInnerHTML={{ __html: body }} />
