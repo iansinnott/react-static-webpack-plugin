@@ -46,8 +46,10 @@
     "async": "^1.5.1",
     "debug": "^2.2.0",
     "eval": "^0.1.1",
+    "lodash": "^4.11.1"
+  },
+  "peerDependencies": {
     "history": "^1.17.0",
-    "lodash": "^4.11.1",
     "react": "^15.0.2",
     "react-dom": "^15.0.2",
     "react-router": "^2.4.0"
