@@ -1,5 +1,6 @@
 /* @flow */
 import path from 'path';
+import vm from 'vm';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
 import evaluate from 'eval';
@@ -7,6 +8,14 @@ import { match, RouterContext } from 'react-router';
 import async from 'async';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 import Promise from 'bluebird';
+
+/**
+ * TODO: There is currnetly an issue where it seems the compiled bundle is not
+ * UMD. Meaning when it getes evaled there is nothing there so the component is
+ * not recognized.
+ *
+ * Maybe try using the library target plugin...
+ */
 
 import { name as packageName } from '../package.json';
 import { getAllPaths, log } from './utils.js';
@@ -36,11 +45,6 @@ const validateOptions = (options) => {
     throw new Error('No routes param provided');
   }
 };
-
-function StaticSitePlugin(options: Options) {
-  validateOptions(options);
-  this.options = options;
-}
 
 // Purely for debugging
 const dir = (obj, params) => console.dir(obj, { colors: true, depth: 4, ...params });
@@ -76,6 +80,14 @@ const compileRoutes: CompileAsset = (routes, compilation, context) => {
     });
   });
 };
+
+function StaticSitePlugin(options: Options) {
+  validateOptions(options);
+  this.options = options;
+  this.render = this.options.template
+    ? require(path.resolve(this.options.template))
+    : render;
+}
 
 /**
  * compiler seems to be an instance of the Compiler
@@ -131,14 +143,38 @@ StaticSitePlugin.prototype.apply = function(compiler) {
     .finally(cb);
   });
 
+  /**
+   * [1]: We want to allow the user the option of eithe export default routes or
+   * export routes.
+   */
   compiler.plugin('emit', (compilation, cb) => {
     compilationPromise
     .then((asset) => {
-      dir(asset);
+      return vm.runInThisContext(source);
+      // console.log(evaluate(asset.source(), true));
+      // return evaluate(asset.source(), true);
     })
-    .then((...args) => {
-      cb(...args);
-    });
+    .catch(cb) // TODO: Eval failed, likely a syntax error in build
+    .then((routes) => {
+      if (!routes) {
+        throw new Error(`File compiled with empty source: ${this.options.routes}`);
+      }
+
+      const Component = routes.routes || routes; // [1]
+
+      dir(Component);
+
+      if (!isRoute(Component)) {
+        log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
+        compilation.assets['index.html'] = renderSingleComponent(Component, this.options, this.render);
+        return cb();
+      }
+
+      const paths = getAllPaths(Component);
+      log('Parsed routes:', paths);
+
+      cb();
+    })
     // .then(() => {
     //   const asset = findAsset(this.options.src, compilation);
     //
@@ -303,6 +339,7 @@ function isValidComponent(Component): boolean {
  * whatever is provided in the template.
  */
 function renderSingleComponent(Component, options, render) { // eslint-disable-line no-shadow
+  dir(Component)
   const body = ReactDOM.renderToString(<Component />);
   const { stylesheet, favicon, bundle } = options;
   const doc = render({
