@@ -5,6 +5,8 @@ import ReactDOM from 'react-dom/server';
 import evaluate from 'eval';
 import { match, RouterContext } from 'react-router';
 import async from 'async';
+import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
+import Promise from 'bluebird';
 
 import { name as packageName } from '../package.json';
 import { getAllPaths, log } from './utils.js';
@@ -20,19 +22,60 @@ import { render } from './Html.js';
  */
 
 type Options = {
-  src: string,
+  routes: string,
   bundle?: string,
   stylesheet?: string,
   favicon?: string,
   template?: string,
+
+  src?: string, // Deprecated. Use routes instead
 }
 
+const validateOptions = (options) => {
+  if (!options.routes) {
+    throw new Error('No routes param provided');
+  }
+};
+
 function StaticSitePlugin(options: Options) {
+  validateOptions(options);
   this.options = options;
-  this.render = this.options.template
-    ? require(path.resolve(this.options.template))
-    : render;
 }
+
+// Purely for debugging
+const dir = (obj, params) => console.dir(obj, { colors: true, depth: 4, ...params });
+
+const CompileAsset = (a: string, b: Object, c: string) => Promise;
+const compileRoutes: CompileAsset = (routes, compilation, context) => {
+
+  const compilerName = `react-static-webpack compiling "${routes}"`;
+  const outputFilename = 'routes.js';
+  const outputOptions = {
+    filename: outputFilename,
+    publicPath: compilation.outputOptions.publicPath,
+  };
+
+  const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
+  childCompiler.apply(
+    new SingleEntryPlugin(context, routes)
+  );
+
+  // Run the compilation async and return a promise
+  return new Promise((resolve, reject) => {
+    childCompiler.runAsChild(function(err, entries, childCompilation) {
+      // Resolve / reject the promise
+      if (childCompilation.errors && childCompilation.errors.length) {
+        const errorDetails = childCompilation.errors.map((err) => {
+          return err.message + (err.error ? ':\n' + err.error : '');
+        }).join('\n');
+
+        reject('Child compilation failed:\n' + errorDetails);
+      } else {
+        resolve(compilation.assets[outputFilename]);
+      }
+    });
+  });
+};
 
 /**
  * compiler seems to be an instance of the Compiler
@@ -57,66 +100,107 @@ function StaticSitePlugin(options: Options) {
  *
  */
 StaticSitePlugin.prototype.apply = function(compiler) {
+
+  // compiler.plugin('compilation', (compilation) => {
+  //   if (compilation.compiler.isChild()) return;
+  //   console.log('Compilation');
+  // });
+
+  // compiler.plugin("normal-module-factory", function(nmf) {
+  //   console.log('NMF', nmf);
+  //     nmf.plugin("after-resolve", function(data) {
+  //       console.log('DATA', data);
+  //         data.loaders.unshift(path.join(__dirname, "postloader.js"));
+  //     });
+  // });
+
+  // Can add loaders here as well since we have access to
+  // params.normalModuleFactory
+  // compiler.plugin('compile', (params) => {
+  //   console.log('PARAMS');
+  //   dir(params);
+  // });
+
+  let compilationPromise;
+
+  // Compile Routes and or entry point
+  compiler.plugin('make', (compilation, cb) => {
+    const { routes } = this.options;
+    compilationPromise = compileRoutes(routes, compilation, this.context)
+    .catch(err => new Error(err))
+    .finally(cb);
+  });
+
   compiler.plugin('emit', (compilation, cb) => {
-    const asset = findAsset(this.options.src, compilation);
+    compilationPromise
+    .then((asset) => {
+      dir(asset);
+    })
+    .then((...args) => {
+      cb(...args);
+    });
+    // .then(() => {
+    //   const asset = findAsset(this.options.src, compilation);
+    //
+    //   if (!asset) {
+    //     throw new Error(`Output file not found: ${this.options.src}`);
+    //   }
+    //
+    //   const source = evaluate(asset.source(), true);
+    //   const Component = source.routes || source;
+    //   log('src evaluated to Component:', Component);
+    //
+    //   // NOTE: If Symbol(react.element) was removed this would no longer work
+    //   if (!isValidComponent(Component)) {
+    //     log('Component was invalid. Throwing error.');
+    //     throw new Error(`${packageName} -- options.src entry point must export a valid React Component.`);
+    //   }
+    //
+    //   if (!isRoute(Component)) {
+    //     log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
+    //     compilation.assets['index.html'] = renderSingleComponent(Component, this.options, this.render);
+    //     return cb();
+    //   }
+    //
+    //   const paths = getAllPaths(Component);
+    //   log('Parsed routes:', paths);
+    //
+    //   async.forEach(paths,
+    //     (location, callback) => {
+    //       match({ routes: Component, location }, (err, redirectLocation, renderProps) => {
+    //         // Skip if something goes wrong. See NOTE above.
+    //         if (err || !renderProps) {
+    //           log('Error matching route', err, renderProps);
+    //           return callback();
+    //         }
+    //
+    //         const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
+    //         const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
+    //         const { stylesheet, favicon, bundle } = this.options;
+    //         const assetKey = getAssetKey(location);
+    //         const doc = this.render({
+    //           title: route.title,
+    //           body,
+    //           stylesheet,
+    //           favicon,
+    //           bundle,
+    //         });
+    //
+    //         compilation.assets[assetKey] = {
+    //           source() { return doc; },
+    //           size() { return doc.length; },
+    //         };
+    //
+    //         callback();
+    //       });
+    //     },
+    //     err => {
+    //       if (err) throw err;
+    //       cb();
+    //     }
+    //   );
+    // })
 
-    if (!asset) {
-      throw new Error(`Output file not found: ${this.options.src}`);
-    }
-
-    const source = evaluate(asset.source(), true);
-    const Component = source.routes || source;
-    log('src evaluated to Component:', Component);
-
-    // NOTE: If Symbol(react.element) was removed this would no longer work
-    if (!isValidComponent(Component)) {
-      log('Component was invalid. Throwing error.');
-      throw new Error(`${packageName} -- options.src entry point must export a valid React Component.`);
-    }
-
-    if (!isRoute(Component)) {
-      log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
-      compilation.assets['index.html'] = renderSingleComponent(Component, this.options, this.render);
-      return cb();
-    }
-
-    const paths = getAllPaths(Component);
-    log('Parsed routes:', paths);
-
-    async.forEach(paths,
-      (location, callback) => {
-        match({ routes: Component, location }, (err, redirectLocation, renderProps) => {
-          // Skip if something goes wrong. See NOTE above.
-          if (err || !renderProps) {
-            log('Error matching route', err, renderProps);
-            return callback();
-          }
-
-          const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-          const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
-          const { stylesheet, favicon, bundle } = this.options;
-          const assetKey = getAssetKey(location);
-          const doc = this.render({
-            title: route.title,
-            body,
-            stylesheet,
-            favicon,
-            bundle,
-          });
-
-          compilation.assets[assetKey] = {
-            source() { return doc; },
-            size() { return doc.length; },
-          };
-
-          callback();
-        });
-      },
-      err => {
-        if (err) throw err;
-        cb();
-      }
-    );
   });
 };
 

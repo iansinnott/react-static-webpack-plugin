@@ -43,5 +43,6 @@ Html.propTypes = {
  * @param {object} props
  * @return {string}
  */
-export const render = props =>
-  '<!doctype html>' + renderToStaticMarkup(<Html {...props} />);
+export const render = (props): string => {
+  return '<!doctype html>' + renderToStaticMarkup(<Html {...props} />);
+};
