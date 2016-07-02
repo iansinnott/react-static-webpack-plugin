@@ -19,7 +19,7 @@ module.exports = {
 
   plugins: [
     new StaticSitePlugin({
-      src: 'app',
+      routes: './src/routes.js',
       stylesheet: '/app.css',
       favicon: '/favicon.ico',
     }),
