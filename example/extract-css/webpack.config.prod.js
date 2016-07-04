@@ -2,8 +2,6 @@
 var path = require('path');
 var webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var axis = require('axis');
-var rupture = require('rupture');
 var ReactStaticPlugin = require('../../dist');
 
 module.exports = {
@@ -20,7 +18,6 @@ module.exports = {
   },
 
   plugins: [
-    new ExtractTextPlugin('[name].css', { allChunks: true }),
     // new webpack.optimize.OccurenceOrderPlugin(),
     // new webpack.DefinePlugin({
     //   'process.env': {
@@ -32,10 +29,10 @@ module.exports = {
     //   compressor: { warnings: false },
     // }),
     new ReactStaticPlugin({
-      routes: './client/routes.js',
+      routes: './client/components/App.js',
       stylesheet: '/app.css',
-      favicon: '/favicon.ico',
     }),
+    new ExtractTextPlugin('style.css', { allChunks: true }),
   ],
 
   module: {
@@ -49,26 +46,23 @@ module.exports = {
         test: /\.css$/,
         loader: ExtractTextPlugin.extract('style', 'css'),
       },
-      {
-        test: /\.styl/,
-        loader: ExtractTextPlugin.extract('style', 'css?modules&importLoaders=2!autoprefixer!stylus'),
-      },
-      {
-        test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loaders: ['url?limit=10000&mimetype=application/font-woff'],
-      },
-      {
-        test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loaders: ['file'],
-      },
-      {
-        test: /\.(png|jpg|gif|ico)$/,
-        loaders: ['file?name=[name].[ext]'],
-      },
+      // {
+      //   test: /\.styl/,
+      //   loader: ExtractTextPlugin.extract('style', 'css?modules&importLoaders=2!autoprefixer!stylus'),
+      // },
+      // {
+      //   test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+      //   loaders: ['url?limit=10000&mimetype=application/font-woff'],
+      // },
+      // {
+      //   test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+      //   loaders: ['file'],
+      // },
+      // {
+      //   test: /\.(png|jpg|gif|ico)$/,
+      //   loaders: ['file?name=[name].[ext]'],
+      // },
     ],
   },
 
-  stylus: {
-    use: [axis(), rupture()],
-  },
 };

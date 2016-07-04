@@ -1,7 +1,6 @@
 /* eslint-disable no-var */
 var path = require('path');
 var webpack = require('webpack');
-var axis = require('axis');
 var rupture = require('rupture');
 
 // Set up dev host host and HMR host. For the dev host this is pretty self
@@ -71,6 +70,6 @@ module.exports = {
   },
 
   stylus: {
-    use: [axis(), rupture()],
+    use: [rupture()],
   },
 };
