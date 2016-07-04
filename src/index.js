@@ -51,6 +51,20 @@ const validateOptions = (options) => {
   }
 };
 
+/**
+ * Mutative. Remove the routes file from the compilation. We don't actually want it
+ * output into public
+ * TODO: There is likely a better place to put this.
+ *
+ * [1] Is there any reason this logic could end up faulty? The creation of
+ * a map file depends on the users config, so it may be better to check
+ * for the existence of this file before removing.
+ */
+const removeExtraneousOutputFiles = (compilation) => {
+  delete compilation.assets[outputFilename];
+  delete compilation.assets[`${outputFilename}.map`]; // [1]
+};
+
 // Purely for debugging
 const dir = (obj, params) => console.dir(obj, { colors: true, depth: 4, ...params });
 
@@ -187,21 +201,15 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       if (!isRoute(Routes)) {
         log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
         compilation.assets['index.html'] = renderSingleComponent(Routes, this.options, this.render);
+        removeExtraneousOutputFiles(compilation);
         return cb();
       }
 
       const paths = getAllPaths(Routes);
       log('Parsed routes:', paths);
 
-      // Remove the routes file from the compilation. We don't actually want it
-      // output into public
-      // TODO: There is likely a better place to put this.
-      //
-      // [1] Is there any reason this logic could end up faulty? The creation of
-      // a map file depends on the users config, so it may be better to check
-      // for the existence of this file before removing.
-      delete compilation.assets[outputFilename];
-      delete compilation.assets[`${outputFilename}.map`]; // [1]
+      // Remove everything we don't want
+      removeExtraneousOutputFiles(compilation);
 
       // TODO: Since we are using promises elsewhere it would make sense ot
       // promisify this async logic as well.
