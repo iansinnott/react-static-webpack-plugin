@@ -6,8 +6,13 @@ import ReactDOM from 'react-dom/server';
 import evaluate from 'eval';
 import { match, RouterContext } from 'react-router';
 import async from 'async';
-import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 import Promise from 'bluebird';
+
+import NodeTemplatePlugin from 'webpack/lib/node/NodeTemplatePlugin';
+import NodeTargetPlugin from 'webpack/lib/node/NodeTargetPlugin';
+import LoaderTargetPlugin from 'webpack/lib/LoaderTargetPlugin';
+import LibraryTemplatePlugin from 'webpack/lib/LibraryTemplatePlugin';
+import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 
 /**
  * TODO: There is currnetly an issue where it seems the compiled bundle is not
@@ -63,7 +68,11 @@ const compileRoutes: CompileAsset = (routes, compilation, context) => {
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
   childCompiler.apply(
-    new SingleEntryPlugin(context, routes)
+    // new NodeTemplatePlugin(outputOptions),
+    // new NodeTargetPlugin(),
+    // new LibraryTemplatePlugin('HTML_WEBPACK_PLUGIN_RESULT', 'var'),
+    new SingleEntryPlugin(context, routes),
+    // new LoaderTargetPlugin('node')
   );
 
   // Run the compilation async and return a promise
@@ -157,6 +166,10 @@ StaticSitePlugin.prototype.apply = function(compiler) {
   compiler.plugin('emit', (compilation, cb) => {
     compilationPromise
     .then((asset) => {
+      if (asset instanceof Error) {
+        return Promise.reject(asset);
+      }
+
       const source = asset.source();
       return vm.runInThisContext(source);
       // console.log(evaluate(source, true)); // TODO: Remove this if no longer
@@ -391,9 +404,16 @@ function isValidComponent(Component): boolean {
  * the page title. If this is not provided then the title will default to
  * whatever is provided in the template.
  */
-function renderSingleComponent(Component, options, render) { // eslint-disable-line no-shadow
-  dir(Component)
-  const body = ReactDOM.renderToString(<Component />);
+function renderSingleComponent(imported, options, render) { // eslint-disable-line no-shadow
+  const Component = imported.default || imported;
+  let body;
+
+  try {
+    body = ReactDOM.renderToString(<Component />);
+  } catch (err) {
+    throw new Error(`Invalid single component. Make sure you added your component as the default export from ${options.routes}`);
+  }
+
   const { stylesheet, favicon, bundle } = options;
   const doc = render({
     title: Component.title, // See NOTE
