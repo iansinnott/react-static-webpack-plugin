@@ -49,11 +49,13 @@ const validateOptions = (options) => {
 // Purely for debugging
 const dir = (obj, params) => console.dir(obj, { colors: true, depth: 4, ...params });
 
+// TODO: Not very pure...
+const outputFilename = 'routes.js';
+
 const CompileAsset = (a: string, b: Object, c: string) => Promise;
 const compileRoutes: CompileAsset = (routes, compilation, context) => {
 
   const compilerName = `react-static-webpack compiling "${routes}"`;
-  const outputFilename = 'routes.js';
   const outputOptions = {
     filename: outputFilename,
     publicPath: compilation.outputOptions.publicPath,
@@ -167,22 +169,32 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         throw new Error(`File compiled with empty source: ${this.options.routes}`);
       }
 
-      const Component = routes.routes || routes; // [1]
+      const Routes = routes.routes || routes; // [1]
 
-      dir(Component);
-
-      if (!isRoute(Component)) {
+      if (!isRoute(Routes)) {
         log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
-        compilation.assets['index.html'] = renderSingleComponent(Component, this.options, this.render);
+        compilation.assets['index.html'] = renderSingleComponent(Routes, this.options, this.render);
         return cb();
       }
 
-      const paths = getAllPaths(Component);
+      const paths = getAllPaths(Routes);
       log('Parsed routes:', paths);
 
+      // Remove the routes file from the compilation. We don't actually want it
+      // output into public
+      // TODO: There is likely a better place to put this.
+      //
+      // [1] Is there any reason this logic could end up faulty? The creation of
+      // a map file depends on the users config, so it may be better to check
+      // for the existence of this file before removing.
+      delete compilation.assets[outputFilename];
+      delete compilation.assets[`${outputFilename}.map`]; // [1]
+
+      // TODO: Since we are using promises elsewhere it would make sense ot
+      // promisify this async logic as well.
       async.forEach(paths,
         (location, callback) => {
-          match({ routes: Component, location }, (err, redirectLocation, renderProps) => {
+          match({ routes: Routes, location }, (err, redirectLocation, renderProps) => {
             // Skip if something goes wrong. See NOTE above.
             if (err || !renderProps) {
               log('Error matching route', err, renderProps);
