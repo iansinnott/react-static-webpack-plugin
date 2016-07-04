@@ -1,7 +1,7 @@
 /* eslint-disable no-var */
 var path = require('path');
 
-var StaticSitePlugin = require('../dist');
+var StaticSitePlugin = require('../../dist');
 
 module.exports = {
   devtool: 'source-map',
