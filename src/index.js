@@ -146,13 +146,20 @@ StaticSitePlugin.prototype.apply = function(compiler) {
   /**
    * [1]: We want to allow the user the option of eithe export default routes or
    * export routes.
+   *
+   * NOTE: It turns out that vm.runInThisContext works fine while evaluate
+   * failes. It seems evaluate the routes file in this example as empty, which
+   * it should not be... Not sure if switching to vm from evaluate will cause
+   * breakage so i'm leaving it in here with this note for now.
    */
   compiler.plugin('emit', (compilation, cb) => {
     compilationPromise
     .then((asset) => {
+      const source = asset.source();
       return vm.runInThisContext(source);
-      // console.log(evaluate(asset.source(), true));
-      // return evaluate(asset.source(), true);
+      // console.log(evaluate(source, true)); // TODO: Remove this if no longer
+      // necessary
+      // return evaluate(source, true);
     })
     .catch(cb) // TODO: Eval failed, likely a syntax error in build
     .then((routes) => {
@@ -173,8 +180,42 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       const paths = getAllPaths(Component);
       log('Parsed routes:', paths);
 
-      cb();
+      async.forEach(paths,
+        (location, callback) => {
+          match({ routes: Component, location }, (err, redirectLocation, renderProps) => {
+            // Skip if something goes wrong. See NOTE above.
+            if (err || !renderProps) {
+              log('Error matching route', err, renderProps);
+              return callback();
+            }
+
+            const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
+            const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
+            const { stylesheet, favicon, bundle } = this.options;
+            const assetKey = getAssetKey(location);
+            const doc = this.render({
+              title: route.title,
+              body,
+              stylesheet,
+              favicon,
+              bundle,
+            });
+
+            compilation.assets[assetKey] = {
+              source() { return doc; },
+              size() { return doc.length; },
+            };
+
+            callback();
+          });
+        },
+        err => {
+          if (err) throw err;
+          cb();
+        }
+      );
     })
+
     // .then(() => {
     //   const asset = findAsset(this.options.src, compilation);
     //
