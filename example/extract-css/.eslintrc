@@ -1,0 +1,15 @@
+{
+  "extends": "airbnb",
+  "rules": {
+
+    // Single quotes on JSX components
+    "jsx-quotes": [2, "prefer-single"],
+
+    // Allow multiple components in a single file
+    "react/no-multi-comp": [0],
+
+    // Do not prefer extending React.Component over React.createClass
+    "react/prefer-es6-class": [0],
+
+  },
+}
