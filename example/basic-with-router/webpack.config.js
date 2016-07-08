@@ -1,7 +1,7 @@
 /* eslint-disable no-var */
 var path = require('path');
 
-var StaticSitePlugin = require('../../dist');
+var ReactStaticPlugin = require('../../dist');
 
 module.exports = {
   devtool: 'source-map',
@@ -18,7 +18,7 @@ module.exports = {
   },
 
   plugins: [
-    new StaticSitePlugin({
+    new ReactStaticPlugin({
       routes: './src/routes.js',
       stylesheet: '/app.css',
       favicon: '/favicon.ico',
