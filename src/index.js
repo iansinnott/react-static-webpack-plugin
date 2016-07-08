@@ -15,9 +15,15 @@ import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 
 import {
   getAllPaths,
+  isRoute,
+  renderSingleComponent,
+  getAssetKey,
   debug,
 } from './utils.js';
 import { render } from './Html.js';
+import type {
+  OptionsShape,
+} from './constants.js';
 
 /**
  * All source will be compiled with babel so ES6 goes
@@ -27,16 +33,6 @@ import { render } from './Html.js';
  *   new StaticSitePlugin({ src: 'client/routes.js', ...options }),
  *
  */
-
-type Options = {
-  routes: string,
-  bundle?: string,
-  stylesheet?: string,
-  favicon?: string,
-  template?: string,
-
-  src?: string, // Deprecated. Use routes instead
-}
 
 const validateOptions = (options) => {
   if (!options.routes) {
@@ -53,17 +49,22 @@ const validateOptions = (options) => {
  * a map file depends on the users config, so it may be better to check
  * for the existence of this file before removing.
  */
-const removeExtraneousOutputFiles = (compilation) => {
+const removeExtraneousOutputFiles = (compilation, outputFilename) => {
   delete compilation.assets[outputFilename];
   delete compilation.assets[`${outputFilename}.map`]; // [1]
 };
 
-// TODO: Not very pure...
-const outputFilename = 'routes.js';
+type CompileAssetOptionsShape = {
+  filepath: string,
+  outputFilename: string,
+  compilation: Object,
+  context: string,
+};
 
-type CompileAsset = (a: string, b: Object, c: string) => Promise;
-const compileAsset: CompileAsset = (routes, compilation, context) => {
-  const compilerName = `react-static-webpack compiling "${routes}"`;
+type CompileAsset = (a: CompileAssetOptionsShape) => Promise;
+const compileAsset: CompileAsset = (opts) => {
+  const { filepath, outputFilename, compilation, context } = opts;
+  const compilerName = `react-static-webpack compiling "${filepath}"`;
   const outputOptions = {
     filename: outputFilename,
     publicPath: compilation.outputOptions.publicPath,
@@ -73,7 +74,7 @@ const compileAsset: CompileAsset = (routes, compilation, context) => {
   // childCompiler.apply(new NodeTemplatePlugin(outputOptions));
   // childCompiler.apply(new LibraryTemplatePlugin(null, 'commonjs2'));
   // childCompiler.apply(new NodeTargetPlugin());
-  childCompiler.apply(new SingleEntryPlugin(context, routes));
+  childCompiler.apply(new SingleEntryPlugin(context, filepath));
   // childCompiler.apply(new LoaderTargetPlugin('node'));
 
   // TODO: Is this fragile? How does it compare to using the require.resolve as
@@ -84,13 +85,13 @@ const compileAsset: CompileAsset = (routes, compilation, context) => {
   // the context is that in my examples which are in subdirs of a large project
   // they were unable to correctly resolve the dirname, instead looking in the
   // top-level node_modules folder
-  const ExtractTextPlugin__dirname = path.resolve(context, './node_modules/extract-text-webpack-plugin');
+  const extractTextPluginPath = path.resolve(context, './node_modules/extract-text-webpack-plugin');
 
   // NOTE: This is taken directly from extract-text-webpack-plugin
   // https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
-  childCompiler.plugin('this-compilation', function(compilation) {
-    compilation.plugin('normal-module-loader', function(loaderContext) {
-      loaderContext[ExtractTextPlugin__dirname] = false;
+  childCompiler.plugin('this-compilation', (compilation) => {
+    compilation.plugin('normal-module-loader', (loaderContext) => {
+      loaderContext[extractTextPluginPath] = false;
     });
   });
 
@@ -111,7 +112,7 @@ const compileAsset: CompileAsset = (routes, compilation, context) => {
   });
 };
 
-function StaticSitePlugin(options: Options) {
+function StaticSitePlugin(options: OptionsShape) {
   validateOptions(options);
   this.options = options;
   this.render = this.options.template
@@ -149,13 +150,18 @@ StaticSitePlugin.prototype.apply = function(compiler) {
   // TODO: Support compiling reduxStore
   compiler.plugin('make', (compilation, cb) => {
     const { routes } = this.options;
-    compilationPromise = compileAsset(routes, compilation, compiler.context)
+    compilationPromise = compileAsset({
+      filepath: routes,
+      outputFilename: 'routes.js',
+      compilation,
+      context: compiler.context,
+    })
     .catch(err => new Error(err))
     .finally(cb);
   });
 
   /**
-   * [1]: We want to allow the user the option of eithe export default routes or
+   * [1]: We want to allow the user the option of either export default routes or
    * export routes.
    *
    * NOTE: It turns out that vm.runInThisContext works fine while evaluate
@@ -182,10 +188,9 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       const Routes = routes.routes || routes; // [1]
 
       if (!isRoute(Routes)) {
-        // TODO: This should be a debug log
         debug('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
         compilation.assets['index.html'] = renderSingleComponent(Routes, this.options, this.render);
-        removeExtraneousOutputFiles(compilation);
+        removeExtraneousOutputFiles(compilation, 'routes.js');
         return cb();
       }
 
@@ -195,7 +200,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       debug('Parsed routes:', paths);
 
       // Remove everything we don't want
-      removeExtraneousOutputFiles(compilation);
+      removeExtraneousOutputFiles(compilation, 'routes.js');
 
       // TODO: Since we are using promises elsewhere it would make sense ot
       // promisify this async logic as well.
@@ -233,90 +238,8 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           cb();
         }
       );
-    })
+    });
   });
 };
-
-/**
- * Given a string location (i.e. path) return a relevant HTML filename.
- * Ex: '/' -> 'index.html'
- * Ex: '/about' -> 'about.html'
- * Ex: '/about/' -> 'about/index.html'
- * Ex: '/about/team' -> 'about/team.html'
- *
- * NOTE: Don't want leading slash
- * i.e. 'path/to/file.html' instead of '/path/to/file.html'
- *
- * NOTE: There is a lone case where the users specifices a not found route that
- * results in a '/*' location. In this case we output 404.html, since it's
- * assumed that this is a 404 route. See the RR changelong for details:
- * https://github.com/rackt/react-router/blob/1.0.x/CHANGES.md#notfound-route
- */
-function getAssetKey(location: string): string {
-  const basename = path.basename(location);
-  const dirname = path.dirname(location).slice(1); // See NOTE above
-  let filename;
-
-  if (!basename || location.slice(-1) === '/') {
-    filename = 'index.html';
-  } else if (basename === '*') {
-    filename = '404.html';
-  } else {
-    filename = basename + '.html';
-  }
-
-  return dirname ? (dirname + path.sep + filename) : filename;
-}
-
-/**
- * Test if a React Element is a React Router Route or not. Note that this tests
- * the actual object (i.e. React Element), not a constructor. As such we
- * immediately deconstruct out the type property as that is what we want to
- * test.
- *
- * NOTE: Testing whether Component.type was an instanceof Route did not work.
- *
- * NOTE: This is a fragile test. The React Router API is notorious for
- * introducing breaking changes, so of the RR team changed the manditory path
- * and component props this would fail.
- */
-function isRoute({ type: component }): boolean {
-  return component && component.propTypes.path && component.propTypes.component;
-}
-
-/**
- * If not provided with any React Router Routes we try to render whatever asset
- * was passed to the plugin as a React component. The use case would be anyone
- * who doesn't need/want to add RR as a dependency to their app and instead only
- * wants a single HTML file output.
- *
- * NOTE: In the case of a single component we use the static prop 'title' to get
- * the page title. If this is not provided then the title will default to
- * whatever is provided in the template.
- */
-function renderSingleComponent(imported, options, render) { // eslint-disable-line no-shadow
-  const Component = imported.default || imported;
-  let body;
-
-  try {
-    body = ReactDOM.renderToString(<Component />);
-  } catch (err) {
-    throw new Error(`Invalid single component. Make sure you added your component as the default export from ${options.routes}`);
-  }
-
-  const { stylesheet, favicon, bundle } = options;
-  const doc = render({
-    title: Component.title, // See NOTE
-    body,
-    stylesheet,
-    favicon,
-    bundle,
-  });
-
-  return {
-    source() { return doc; },
-    size() { return doc.length; },
-  };
-}
 
 module.exports = StaticSitePlugin;
