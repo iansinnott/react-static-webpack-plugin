@@ -1,14 +1,6 @@
 import isArray from 'lodash/isArray';
 import isUndefined from 'lodash/isUndefined';
 import flattenDeep from 'lodash/flattenDeep';
-import debug from 'debug';
-
-import { name as packageName } from '../package.json';
-
-/**
- * A simple debug logger
- */
-export const log = debug(packageName);
 
 /**
  * This is not a very sophisticated checking method. Assuming we already know

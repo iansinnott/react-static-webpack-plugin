@@ -49,13 +49,6 @@
     "eval": "^0.1.1",
     "lodash": "^4.11.1"
   },
-  "peerDependencies": {
-    "history": "^1.17.0",
-    "react": "^15.0.2",
-    "react-dom": "^15.0.2",
-    "react-router": "^2.4.0",
-    "webpack": "~1.13.1"
-  },
   "devDependencies": {
     "ava": "^0.14.0",
     "babel": "^6.3.26",
@@ -69,5 +62,13 @@
     "eslint-config-airbnb": "^2.1.1",
     "eslint-plugin-react": "^3.13.1",
     "rimraf": "^2.5.0"
+  },
+  "peerDependencies": {
+    "history": "^1.17.0",
+    "react": "^15.0.2",
+    "react-dom": "^15.0.2",
+    "react-router": "^2.4.0",
+    "webpack": "~1.13.1",
+    "extract-text-webpack-plugin": "^1.0.1"
   }
 }

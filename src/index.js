@@ -15,15 +15,11 @@ import LibraryTemplatePlugin from 'webpack/lib/LibraryTemplatePlugin';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 
 /**
- * TODO: There is currnetly an issue where it seems the compiled bundle is not
- * UMD. Meaning when it getes evaled there is nothing there so the component is
- * not recognized.
- *
- * Maybe try using the library target plugin...
+ * How can I add plugins to the child compiler? It seems it's getting called
+ * without the extract text wepback plugin added, which it needs.
  */
 
-import { name as packageName } from '../package.json';
-import { getAllPaths, log } from './utils.js';
+import { getAllPaths } from './utils.js';
 import { render } from './Html.js';
 
 /**
@@ -73,7 +69,6 @@ const outputFilename = 'routes.js';
 
 const CompileAsset = (a: string, b: Object, c: string) => Promise;
 const compileRoutes: CompileAsset = (routes, compilation, context) => {
-
   const compilerName = `react-static-webpack compiling "${routes}"`;
   const outputOptions = {
     filename: outputFilename,
@@ -81,13 +76,44 @@ const compileRoutes: CompileAsset = (routes, compilation, context) => {
   };
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
-  childCompiler.apply(
-    // new NodeTemplatePlugin(outputOptions),
-    // new NodeTargetPlugin(),
-    // new LibraryTemplatePlugin('HTML_WEBPACK_PLUGIN_RESULT', 'var'),
-    new SingleEntryPlugin(context, routes),
-    // new LoaderTargetPlugin('node')
-  );
+  // childCompiler.apply(new NodeTemplatePlugin(outputOptions));
+  // childCompiler.apply(new LibraryTemplatePlugin(null, 'commonjs2'));
+  // childCompiler.apply(new NodeTargetPlugin());
+  childCompiler.apply(new SingleEntryPlugin(context, routes));
+  // childCompiler.apply(new ExtractTextPlugin('styles.css'));
+  // childCompiler.apply(new ExtractTextPlugin('[name].css', { allChunks: true }));
+  // childCompiler.apply(new LoaderTargetPlugin('node'));
+  // dir(childCompiler);
+
+  // TODO: Is this fragile? How does it compare to using the require.resolve as
+  // shown here:
+  // const ExtractTextPlugin__dirname = path.dirname(require.resolve('extract-text-webpack-plugin'));
+  //
+  // The whole reason to manually resolve the extract-text-wepbackplugin from
+  // the context is that in my examples which are in subdirs of a large project
+  // they were unable to correctly resolve the dirname, instead looking in the
+  // top-level node_modules folder
+  const ExtractTextPlugin__dirname = path.resolve(context, './node_modules/extract-text-webpack-plugin');
+
+  // NOTE: This is taken directly from extract-text-webpack-plugin
+  // https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
+  childCompiler.plugin('this-compilation', function(compilation) {
+    compilation.plugin('normal-module-loader', function(loaderContext) {
+      loaderContext[ExtractTextPlugin__dirname] = false;
+
+      // Looks like we found the solution. The problem is that the
+      // ExtractTextPlugin__dirname var above resolves to the extract text
+      // plugin at the root of this plugin project, when as we see below it
+      // really needs to resolve to whatever plugin is being used by the
+      // consumer.
+      // * I think this would resolve itself by simply using the installed
+      // plugin within a project, but that will make testing more anoying since
+      // we wouldn't be able to simply run from the subdir examples.
+      // * I can probably write a traversal function to find the nearest
+      // * Do I need to be sure to remove a generated css file (i.e.
+      // routes.css)?
+    });
+  });
 
   // Run the compilation async and return a promise
   return new Promise((resolve, reject) => {
@@ -163,7 +189,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
   // Compile Routes and or entry point
   compiler.plugin('make', (compilation, cb) => {
     const { routes } = this.options;
-    compilationPromise = compileRoutes(routes, compilation, this.context)
+    compilationPromise = compileRoutes(routes, compilation, compiler.context)
     .catch(err => new Error(err))
     .finally(cb);
   });
@@ -199,14 +225,17 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       const Routes = routes.routes || routes; // [1]
 
       if (!isRoute(Routes)) {
-        log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
+        // TODO: This should be a debug log
+        console.log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
         compilation.assets['index.html'] = renderSingleComponent(Routes, this.options, this.render);
         removeExtraneousOutputFiles(compilation);
         return cb();
       }
 
       const paths = getAllPaths(Routes);
-      log('Parsed routes:', paths);
+
+      // TODO: This should be a debug log
+      console.log('Parsed routes:', paths);
 
       // Remove everything we don't want
       removeExtraneousOutputFiles(compilation);
@@ -218,7 +247,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           match({ routes: Routes, location }, (err, redirectLocation, renderProps) => {
             // Skip if something goes wrong. See NOTE above.
             if (err || !renderProps) {
-              log('Error matching route', err, renderProps);
+              console.log('Error matching route', err, renderProps);
               return callback();
             }
 
@@ -315,6 +344,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 };
 
 /**
+ * TODO: Do we need this anymore?
  * @param {string} src
  * @param {Compilation} compilation
  */
