@@ -13,9 +13,9 @@ test.cb('Compiles routes nested at one level', t => {
 
     const files = stats.toJson().assets.map(x => x.name);
 
-    t.true(files.indexOf('index.html') !== -1);
-    t.true(files.indexOf('about.html') !== -1);
-    t.true(files.indexOf('404.html') !== -1);
+    t.true(files.includes('index.html'));
+    t.true(files.includes('about.html'));
+    t.true(files.includes('404.html'));
 
     t.end();
   });

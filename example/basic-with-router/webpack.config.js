@@ -20,8 +20,6 @@ module.exports = {
   plugins: [
     new ReactStaticPlugin({
       routes: './src/routes.js',
-      stylesheet: '/app.css',
-      favicon: '/favicon.ico',
     }),
   ],
 
