@@ -16,7 +16,7 @@
   "scripts": {
     "lint": "eslint src example/*.js ./example/src",
     "test": "npm run lint && npm run build && npm run test:unit",
-    "test:unit": "ava --verbose test.js example/**/test.js",
+    "test:unit": "cross-env NODE_ENV=production ava --verbose test.js example/**/test.js",
     "watch": "babel -w -d dist src",
     "start": "npm run watch",
     "clean": "rimraf dist",
