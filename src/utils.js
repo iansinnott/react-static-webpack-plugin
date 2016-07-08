@@ -1,6 +1,12 @@
+/* @flow */
 import isArray from 'lodash/isArray';
 import isUndefined from 'lodash/isUndefined';
 import flattenDeep from 'lodash/flattenDeep';
+
+/**
+ * A simple debug logger
+ */
+export const debug = require('debug')('react-static-webpack-plugin');
 
 /**
  * This is not a very sophisticated checking method. Assuming we already know

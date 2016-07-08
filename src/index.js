@@ -3,7 +3,6 @@ import path from 'path';
 import vm from 'vm';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
-import evaluate from 'eval';
 import { match, RouterContext } from 'react-router';
 import async from 'async';
 import Promise from 'bluebird';
@@ -14,12 +13,10 @@ import LoaderTargetPlugin from 'webpack/lib/LoaderTargetPlugin';
 import LibraryTemplatePlugin from 'webpack/lib/LibraryTemplatePlugin';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 
-/**
- * How can I add plugins to the child compiler? It seems it's getting called
- * without the extract text wepback plugin added, which it needs.
- */
-
-import { getAllPaths } from './utils.js';
+import {
+  getAllPaths,
+  debug,
+} from './utils.js';
 import { render } from './Html.js';
 
 /**
@@ -61,14 +58,11 @@ const removeExtraneousOutputFiles = (compilation) => {
   delete compilation.assets[`${outputFilename}.map`]; // [1]
 };
 
-// Purely for debugging
-const dir = (obj, params) => console.dir(obj, { colors: true, depth: 4, ...params });
-
 // TODO: Not very pure...
 const outputFilename = 'routes.js';
 
-const CompileAsset = (a: string, b: Object, c: string) => Promise;
-const compileRoutes: CompileAsset = (routes, compilation, context) => {
+type CompileAsset = (a: string, b: Object, c: string) => Promise;
+const compileAsset: CompileAsset = (routes, compilation, context) => {
   const compilerName = `react-static-webpack compiling "${routes}"`;
   const outputOptions = {
     filename: outputFilename,
@@ -80,10 +74,7 @@ const compileRoutes: CompileAsset = (routes, compilation, context) => {
   // childCompiler.apply(new LibraryTemplatePlugin(null, 'commonjs2'));
   // childCompiler.apply(new NodeTargetPlugin());
   childCompiler.apply(new SingleEntryPlugin(context, routes));
-  // childCompiler.apply(new ExtractTextPlugin('styles.css'));
-  // childCompiler.apply(new ExtractTextPlugin('[name].css', { allChunks: true }));
   // childCompiler.apply(new LoaderTargetPlugin('node'));
-  // dir(childCompiler);
 
   // TODO: Is this fragile? How does it compare to using the require.resolve as
   // shown here:
@@ -100,18 +91,6 @@ const compileRoutes: CompileAsset = (routes, compilation, context) => {
   childCompiler.plugin('this-compilation', function(compilation) {
     compilation.plugin('normal-module-loader', function(loaderContext) {
       loaderContext[ExtractTextPlugin__dirname] = false;
-
-      // Looks like we found the solution. The problem is that the
-      // ExtractTextPlugin__dirname var above resolves to the extract text
-      // plugin at the root of this plugin project, when as we see below it
-      // really needs to resolve to whatever plugin is being used by the
-      // consumer.
-      // * I think this would resolve itself by simply using the installed
-      // plugin within a project, but that will make testing more anoying since
-      // we wouldn't be able to simply run from the subdir examples.
-      // * I can probably write a traversal function to find the nearest
-      // * Do I need to be sure to remove a generated css file (i.e.
-      // routes.css)?
     });
   });
 
@@ -163,33 +142,14 @@ function StaticSitePlugin(options: Options) {
  *
  */
 StaticSitePlugin.prototype.apply = function(compiler) {
-
-  // compiler.plugin('compilation', (compilation) => {
-  //   if (compilation.compiler.isChild()) return;
-  //   console.log('Compilation');
-  // });
-
-  // compiler.plugin("normal-module-factory", function(nmf) {
-  //   console.log('NMF', nmf);
-  //     nmf.plugin("after-resolve", function(data) {
-  //       console.log('DATA', data);
-  //         data.loaders.unshift(path.join(__dirname, "postloader.js"));
-  //     });
-  // });
-
-  // Can add loaders here as well since we have access to
-  // params.normalModuleFactory
-  // compiler.plugin('compile', (params) => {
-  //   console.log('PARAMS');
-  //   dir(params);
-  // });
-
   let compilationPromise;
 
-  // Compile Routes and or entry point
+  // Compile Routes, template and redux store (if applicable)
+  // TODO: Support compiling template
+  // TODO: Support compiling reduxStore
   compiler.plugin('make', (compilation, cb) => {
     const { routes } = this.options;
-    compilationPromise = compileRoutes(routes, compilation, compiler.context)
+    compilationPromise = compileAsset(routes, compilation, compiler.context)
     .catch(err => new Error(err))
     .finally(cb);
   });
@@ -212,9 +172,6 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 
       const source = asset.source();
       return vm.runInThisContext(source);
-      // console.log(evaluate(source, true)); // TODO: Remove this if no longer
-      // necessary
-      // return evaluate(source, true);
     })
     .catch(cb) // TODO: Eval failed, likely a syntax error in build
     .then((routes) => {
@@ -226,7 +183,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 
       if (!isRoute(Routes)) {
         // TODO: This should be a debug log
-        console.log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
+        debug('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
         compilation.assets['index.html'] = renderSingleComponent(Routes, this.options, this.render);
         removeExtraneousOutputFiles(compilation);
         return cb();
@@ -235,7 +192,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       const paths = getAllPaths(Routes);
 
       // TODO: This should be a debug log
-      console.log('Parsed routes:', paths);
+      debug('Parsed routes:', paths);
 
       // Remove everything we don't want
       removeExtraneousOutputFiles(compilation);
@@ -247,7 +204,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           match({ routes: Routes, location }, (err, redirectLocation, renderProps) => {
             // Skip if something goes wrong. See NOTE above.
             if (err || !renderProps) {
-              console.log('Error matching route', err, renderProps);
+              debug('Error matching route', err, renderProps);
               return callback();
             }
 
@@ -277,99 +234,8 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         }
       );
     })
-
-    // .then(() => {
-    //   const asset = findAsset(this.options.src, compilation);
-    //
-    //   if (!asset) {
-    //     throw new Error(`Output file not found: ${this.options.src}`);
-    //   }
-    //
-    //   const source = evaluate(asset.source(), true);
-    //   const Component = source.routes || source;
-    //   log('src evaluated to Component:', Component);
-    //
-    //   // NOTE: If Symbol(react.element) was removed this would no longer work
-    //   if (!isValidComponent(Component)) {
-    //     log('Component was invalid. Throwing error.');
-    //     throw new Error(`${packageName} -- options.src entry point must export a valid React Component.`);
-    //   }
-    //
-    //   if (!isRoute(Component)) {
-    //     log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
-    //     compilation.assets['index.html'] = renderSingleComponent(Component, this.options, this.render);
-    //     return cb();
-    //   }
-    //
-    //   const paths = getAllPaths(Component);
-    //   log('Parsed routes:', paths);
-    //
-    //   async.forEach(paths,
-    //     (location, callback) => {
-    //       match({ routes: Component, location }, (err, redirectLocation, renderProps) => {
-    //         // Skip if something goes wrong. See NOTE above.
-    //         if (err || !renderProps) {
-    //           log('Error matching route', err, renderProps);
-    //           return callback();
-    //         }
-    //
-    //         const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-    //         const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
-    //         const { stylesheet, favicon, bundle } = this.options;
-    //         const assetKey = getAssetKey(location);
-    //         const doc = this.render({
-    //           title: route.title,
-    //           body,
-    //           stylesheet,
-    //           favicon,
-    //           bundle,
-    //         });
-    //
-    //         compilation.assets[assetKey] = {
-    //           source() { return doc; },
-    //           size() { return doc.length; },
-    //         };
-    //
-    //         callback();
-    //       });
-    //     },
-    //     err => {
-    //       if (err) throw err;
-    //       cb();
-    //     }
-    //   );
-    // })
-
   });
 };
-
-/**
- * TODO: Do we need this anymore?
- * @param {string} src
- * @param {Compilation} compilation
- */
-function findAsset(src, compilation) {
-  const asset = compilation.assets[src];
-
-  // Found it. It was a key within assets
-  if (asset) return asset;
-
-  // Didn't find it in assets, it must be a chunk
-
-  const webpackStatsJson = compilation.getStats().toJson();
-  let chunkValue = webpackStatsJson.assetsByChunkName[src];
-
-  // Uh oh, couldn't find it as a chunk value either. This indicates a failure
-  // to find the asset. The caller should handle a falsey value as it sees fit.
-  if (!chunkValue) return null;
-
-  // Webpack outputs an array for each chunk when using sourcemaps
-  if (chunkValue instanceof Array) {
-    chunkValue = chunkValue[0]; // Is the main bundle always the first element?
-  }
-
-  return compilation.assets[chunkValue];
-}
 
 /**
  * Given a string location (i.e. path) return a relevant HTML filename.
@@ -416,20 +282,6 @@ function getAssetKey(location: string): string {
  */
 function isRoute({ type: component }): boolean {
   return component && component.propTypes.path && component.propTypes.component;
-}
-
-/**
- * Test if a component is a valid React component.
- *
- * NOTE: This is a pretty wonky test. React.createElement wasn't doing it for
- * me. It seemed to be giving false positives.
- *
- * @param {any} component
- * @return {boolean}
- */
-function isValidComponent(Component): boolean {
-  const { type } = React.createElement(Component);
-  return typeof type === 'object' || typeof type === 'function';
 }
 
 /**
