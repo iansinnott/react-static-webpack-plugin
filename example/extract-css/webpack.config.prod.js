@@ -32,7 +32,7 @@ module.exports = {
       routes: './client/components/App.js',
       stylesheet: '/app.css',
     }),
-    new ExtractTextPlugin('style.css', { allChunks: true }),
+    new ExtractTextPlugin('[name].css', { allChunks: true }),
   ],
 
   module: {

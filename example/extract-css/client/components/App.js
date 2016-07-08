@@ -2,7 +2,7 @@ import React from 'react';
 // import 'normalize.css';
 
 // Using CSS Modules so we assign the styles to a variable
-// import './App.css';
+import './App.css';
 
 // Favicon link is in the template, this just makes webpack package it up for us
 // import './favicon.ico';
@@ -12,7 +12,7 @@ import React from 'react';
  * component as the base compoenent that's passed to ReactDOM.render, so we
  * still use createClass here.
  */
-export const App = React.createClass({
+class App extends React.Component {
   render() {
     return (
       <div className='App'>
@@ -20,7 +20,7 @@ export const App = React.createClass({
         <p>Big wins</p>
       </div>
     );
-  },
-});
+  }
+}
 
 export default App;
