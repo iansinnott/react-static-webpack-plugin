@@ -1,4 +1,12 @@
-/* @flow */
+/**
+ * @flow
+ *
+ * Webpack Plugin Resources:
+ * - https://github.com/andreypopp/webpack-stylegen/blob/master/lib/webpack/index.js#L5
+ * - https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
+ * - https://github.com/kevlened/debug-webpack-plugin/blob/master/index.js
+ * - https://github.com/ampedandwired/html-webpack-plugin/blob/v2.0.3/index.js
+ */
 import path from 'path';
 import vm from 'vm';
 import React from 'react';
@@ -20,15 +28,6 @@ import type {
   OptionsShape,
 } from './constants.js';
 
-/**
- * All source will be compiled with babel so ES6 goes
- *
- * Usage:
- *
- *   new StaticSitePlugin({ src: 'client/routes.js', ...options }),
- *
- */
-
 const validateOptions = (options) => {
   if (!options.routes) {
     throw new Error('No routes param provided');
@@ -42,6 +41,15 @@ function StaticSitePlugin(options: OptionsShape) {
     ? require(path.resolve(this.options.template))
     : render;
 }
+
+/**
+ * The same as the RR match function, but promisified.
+ */
+const promiseMatch = (args) => new Promise((resolve, reject) => {
+  match(args, (err, redirectLocation, renderProps) => {
+    resolve({ err, redirectLocation, renderProps });
+  }, reject);
+});
 
 /**
  * compiler seems to be an instance of the Compiler
@@ -129,62 +137,44 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       }
 
       const paths = getAllPaths(Routes);
-
-      // TODO: This should be a debug log
       debug('Parsed routes:', paths);
 
-      // Remove everything we don't want
+      // TODO: Remove everything we don't want
 
-      // TODO: Since we are using promises elsewhere it would make sense ot
-      // promisify this async logic as well.
-      async.forEach(paths,
-        (location, callback) => {
-          match({ routes: Routes, location }, (err, redirectLocation, renderProps) => {
-            // Skip if something goes wrong. See NOTE above.
-            if (err || !renderProps) {
-              debug('Error matching route', err, renderProps);
-              return callback();
-            }
+      Promise.all(paths.map(location => {
+        return promiseMatch({ routes: Routes, location })
+        .then(({ err, redirectLocation, renderProps }) => {
+          if (err || !renderProps) {
+            debug('Error matching route', location, err, renderProps);
+            return Promise.reject(new Error(`Error matching route: ${location}`));
+          }
 
-            const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-            const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
-            const { stylesheet, favicon, bundle } = this.options;
-            const assetKey = getAssetKey(location);
-            const doc = this.render({
-              title: route.title,
-              body,
-              stylesheet,
-              favicon,
-              bundle,
-            });
+          debug('Sploooooooooooooooooooooosh', location, err, renderProps);
 
-            compilation.assets[assetKey] = {
-              source() { return doc; },
-              size() { return doc.length; },
-            };
-
-            callback();
+          const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
+          const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
+          const { stylesheet, favicon, bundle } = this.options;
+          const assetKey = getAssetKey(location);
+          const doc = this.render({
+            title: route.title,
+            body,
+            stylesheet,
+            favicon,
+            bundle,
           });
-        },
-        err => {
-          if (err) throw err;
-          cb();
-        }
-      );
+
+          compilation.assets[assetKey] = {
+            source() { return doc; },
+            size() { return doc.length; },
+          };
+        });
+      }))
+      .catch((err) => {
+        if (err) throw err;
+      })
+      .finally(cb);
     });
   });
-
-  // TODO: Remove the generated files such as routes, reduxStore and template
-
-  // Fuck. This doesn't work. It somehow gets in front of the rest of our logic
-  // and removes the assets before we have a chance to do anything with them in
-  // the emit plugin.
-  // Remove all chunk assets that were generated from this compmilation. See:
-  // https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L68
-  // compiler.plugin('after-compile', (compilation, cb) => {
-  //   delete compilation.assets['routes.js'];
-  //   cb();
-  // });
 };
 
 module.exports = StaticSitePlugin;
