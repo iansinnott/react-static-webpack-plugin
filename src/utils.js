@@ -69,7 +69,14 @@ export const compileAsset: CompileAsset = (opts) => {
   // https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
   childCompiler.plugin('this-compilation', (compilation) => {
     compilation.plugin('normal-module-loader', (loaderContext) => {
-      loaderContext[extractTextPluginPath] = false;
+      // TODO: Make note about this. It seems that returning true allows the use
+      // of css modules while setting this equal to false makes the import of
+      // css modules fail, which means rendered pages do not have the correct
+      // classnames.
+      // loaderContext[extractTextPluginPath] = false;
+      loaderContext[extractTextPluginPath] = (content, opt) => {
+        return true;
+      };
     });
   });
 
