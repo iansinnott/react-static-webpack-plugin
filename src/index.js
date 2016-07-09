@@ -7,14 +7,9 @@ import { match, RouterContext } from 'react-router';
 import async from 'async';
 import Promise from 'bluebird';
 
-import NodeTemplatePlugin from 'webpack/lib/node/NodeTemplatePlugin';
-import NodeTargetPlugin from 'webpack/lib/node/NodeTargetPlugin';
-import LoaderTargetPlugin from 'webpack/lib/LoaderTargetPlugin';
-import LibraryTemplatePlugin from 'webpack/lib/LibraryTemplatePlugin';
-import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
-
 import {
   getAllPaths,
+  compileAsset,
   isRoute,
   renderSingleComponent,
   getAssetKey,
@@ -54,65 +49,6 @@ const removeExtraneousOutputFiles = (compilation, outputFilename) => {
   delete compilation.assets[`${outputFilename}.map`]; // [1]
 };
 
-type CompileAssetOptionsShape = {
-  filepath: string,
-  outputFilename: string,
-  compilation: Object,
-  context: string,
-};
-
-type CompileAsset = (a: CompileAssetOptionsShape) => Promise;
-const compileAsset: CompileAsset = (opts) => {
-  const { filepath, outputFilename, compilation, context } = opts;
-  const compilerName = `react-static-webpack compiling "${filepath}"`;
-  const outputOptions = {
-    filename: outputFilename,
-    publicPath: compilation.outputOptions.publicPath,
-  };
-
-  const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
-  // childCompiler.apply(new NodeTemplatePlugin(outputOptions));
-  // childCompiler.apply(new NodeTargetPlugin());
-  childCompiler.apply(new SingleEntryPlugin(context, filepath));
-  // childCompiler.apply(new LoaderTargetPlugin('node'));
-
-  // console.dir(childCompiler._plugins, {colors: true})
-
-  // TODO: Is this fragile? How does it compare to using the require.resolve as
-  // shown here:
-  // const ExtractTextPlugin__dirname = path.dirname(require.resolve('extract-text-webpack-plugin'));
-  //
-  // The whole reason to manually resolve the extract-text-wepbackplugin from
-  // the context is that in my examples which are in subdirs of a large project
-  // they were unable to correctly resolve the dirname, instead looking in the
-  // top-level node_modules folder
-  const extractTextPluginPath = path.resolve(context, './node_modules/extract-text-webpack-plugin');
-
-  // NOTE: This is taken directly from extract-text-webpack-plugin
-  // https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
-  childCompiler.plugin('this-compilation', (compilation) => {
-    compilation.plugin('normal-module-loader', (loaderContext) => {
-      loaderContext[extractTextPluginPath] = false;
-    });
-  });
-
-  // Run the compilation async and return a promise
-  return new Promise((resolve, reject) => {
-    childCompiler.runAsChild(function(err, entries, childCompilation) {
-      // Resolve / reject the promise
-      if (childCompilation.errors && childCompilation.errors.length) {
-        const errorDetails = childCompilation.errors.map((err) => {
-          return err.message + (err.error ? ':\n' + err.error : '');
-        }).join('\n');
-
-        reject('Child compilation failed:\n' + errorDetails);
-      } else {
-        resolve(compilation.assets[outputFilename]);
-      }
-    });
-  });
-};
-
 function StaticSitePlugin(options: OptionsShape) {
   validateOptions(options);
   this.options = options;
@@ -149,6 +85,8 @@ StaticSitePlugin.prototype.apply = function(compiler) {
   // Compile Routes, template and redux store (if applicable)
   // TODO: Support compiling template
   // TODO: Support compiling reduxStore
+  // We likely need to do a Promise.all sort of thing to compile every asset we
+  // need and act accordingly.
   compiler.plugin('make', (compilation, cb) => {
     const { routes } = this.options;
     compilationPromise = compileAsset({
