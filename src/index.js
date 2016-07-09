@@ -35,20 +35,6 @@ const validateOptions = (options) => {
   }
 };
 
-/**
- * Mutative. Remove the routes file from the compilation. We don't actually want it
- * output into public
- * TODO: There is likely a better place to put this.
- *
- * [1] Is there any reason this logic could end up faulty? The creation of
- * a map file depends on the users config, so it may be better to check
- * for the existence of this file before removing.
- */
-const removeExtraneousOutputFiles = (compilation, outputFilename) => {
-  delete compilation.assets[outputFilename];
-  delete compilation.assets[`${outputFilename}.map`]; // [1]
-};
-
 function StaticSitePlugin(options: OptionsShape) {
   validateOptions(options);
   this.options = options;
@@ -139,7 +125,6 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       if (!isRoute(Routes)) {
         debug('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
         compilation.assets['index.html'] = renderSingleComponent(Routes, this.options, this.render);
-        removeExtraneousOutputFiles(compilation, 'routes.js');
         return cb();
       }
 
@@ -149,7 +134,6 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       debug('Parsed routes:', paths);
 
       // Remove everything we don't want
-      removeExtraneousOutputFiles(compilation, 'routes.js');
 
       // TODO: Since we are using promises elsewhere it would make sense ot
       // promisify this async logic as well.
@@ -189,6 +173,18 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       );
     });
   });
+
+  // TODO: Remove the generated files such as routes, reduxStore and template
+
+  // Fuck. This doesn't work. It somehow gets in front of the rest of our logic
+  // and removes the assets before we have a chance to do anything with them in
+  // the emit plugin.
+  // Remove all chunk assets that were generated from this compmilation. See:
+  // https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L68
+  // compiler.plugin('after-compile', (compilation, cb) => {
+  //   delete compilation.assets['routes.js'];
+  //   cb();
+  // });
 };
 
 module.exports = StaticSitePlugin;
