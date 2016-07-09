@@ -30,7 +30,6 @@ module.exports = {
     // }),
     new ReactStaticPlugin({
       routes: './client/components/App.js',
-      stylesheet: '/app.css',
     }),
     new ExtractTextPlugin('[name].css', { allChunks: true }),
   ],
