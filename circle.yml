@@ -1,7 +1,7 @@
 ## Customize machine
 machine:
   node:
-    version: 5.11.1
+    version: 6.2.2
 
 ## Install example deps as well so that we can run tests there
 dependencies:
