@@ -76,11 +76,17 @@ const promiseMatch = (args) => new Promise((resolve, reject) => {
 StaticSitePlugin.prototype.apply = function(compiler) {
   let compilationPromise;
 
-  // Compile Routes, template and redux store (if applicable)
-  // TODO: Support compiling template
-  // TODO: Support compiling reduxStore
-  // We likely need to do a Promise.all sort of thing to compile every asset we
-  // need and act accordingly.
+
+  /**
+   * Compile everything that needs to be compiled. This is what the 'make'
+   * plugin is excellent for.
+   *
+   * TODO: Support compiling template
+   * TODO: Support compiling reduxStore
+   *
+   * We likely need to do a Promise.all sort of thing to compile every asset we
+   * need and act accordingly.
+   */
   compiler.plugin('make', (compilation, cb) => {
     const { routes } = this.options;
     compilationPromise = compileAsset({
@@ -107,6 +113,26 @@ StaticSitePlugin.prototype.apply = function(compiler) {
    * failes. It seems evaluate the routes file in this example as empty, which
    * it should not be... Not sure if switching to vm from evaluate will cause
    * breakage so i'm leaving it in here with this note for now.
+   *
+   * compiler seems to be an instance of the Compiler
+   * https://github.com/webpack/webpack/blob/master/lib/Compiler.js#L143
+   *
+   * NOTE: renderProps.routes is always passed as an array of route elements. For
+   * deeply nested routes the last element in the array is the route we want to
+   * get the props of, so we grab it out of the array and use it. This lets us do
+   * things like:
+   *
+   *   <Route title='Blah blah blah...' {...moreProps} />
+   *
+   * Then set the document title to the title defined on that route
+   *
+   * NOTE: Sometimes when matching routes we do not get an error but nore do we
+   * get renderProps. In my experience this usually means we hit an IndexRedirect
+   * or some form of Route that doesn't actually have a component to render. In
+   * these cases we simply keep on moving and don't render anything.
+   *
+   * TODO:
+   * - Allow passing a function for title
    */
   compiler.plugin('emit', (compilation, cb) => {
     compilationPromise
@@ -149,10 +175,8 @@ StaticSitePlugin.prototype.apply = function(compiler) {
             return Promise.reject(new Error(`Error matching route: ${location}`));
           }
 
-          debug('Sploooooooooooooooooooooosh', location, err, renderProps);
-
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-          const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
+          const body = ReactDOM.renderToString(<RouterContext {...renderProps} />); // TOOD: This is where we would want to add a redux wrapper...
           const { stylesheet, favicon, bundle } = this.options;
           const assetKey = getAssetKey(location);
           const doc = this.render({
