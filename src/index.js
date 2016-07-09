@@ -72,10 +72,11 @@ const compileAsset: CompileAsset = (opts) => {
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
   // childCompiler.apply(new NodeTemplatePlugin(outputOptions));
-  // childCompiler.apply(new LibraryTemplatePlugin(null, 'commonjs2'));
   // childCompiler.apply(new NodeTargetPlugin());
   childCompiler.apply(new SingleEntryPlugin(context, filepath));
   // childCompiler.apply(new LoaderTargetPlugin('node'));
+
+  // console.dir(childCompiler._plugins, {colors: true})
 
   // TODO: Is this fragile? How does it compare to using the require.resolve as
   // shown here:
@@ -161,7 +162,13 @@ StaticSitePlugin.prototype.apply = function(compiler) {
   });
 
   /**
-   * [1]: We want to allow the user the option of either export default routes or
+   * [1]: For now i'm assuming that if there is an _originalSource key then the
+   * user is using uglifyjs. However, this may be a fragile check and could
+   * benefit from refactoring. The optimal solution would likely be to simply
+   * remove the uglify plugin from the child compiler. However this solution
+   * doesn't feel generic.
+   *
+   * [2]: We want to allow the user the option of either export default routes or
    * export routes.
    *
    * NOTE: It turns out that vm.runInThisContext works fine while evaluate
@@ -176,7 +183,11 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         return Promise.reject(asset);
       }
 
-      const source = asset.source();
+      if (asset._originalSource) {
+        debug('Source appears to be minified with UglifyJsPlugin. Using asset._originalSource for child compilation instead');
+      }
+
+      const source = asset._originalSource || asset.source(); // [1]
       return vm.runInThisContext(source);
     })
     .catch(cb) // TODO: Eval failed, likely a syntax error in build
@@ -185,7 +196,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         throw new Error(`File compiled with empty source: ${this.options.routes}`);
       }
 
-      const Routes = routes.routes || routes; // [1]
+      const Routes = routes.routes || routes; // [2]
 
       if (!isRoute(Routes)) {
         debug('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
