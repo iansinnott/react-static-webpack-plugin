@@ -43,7 +43,6 @@
     "generator"
   ],
   "dependencies": {
-    "async": "^1.5.1",
     "bluebird": "^3.4.1",
     "debug": "^2.2.0",
     "lodash": "^4.11.1"
