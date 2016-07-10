@@ -30,6 +30,7 @@ module.exports = {
     // }),
     new ReactStaticPlugin({
       routes: './client/components/App.js',
+      template: './template.js',
       stylesheet: '/app.css',
     }),
     new ExtractTextPlugin('[name].css', { allChunks: true }),
@@ -40,7 +41,7 @@ module.exports = {
       {
         test: /\.js$/,
         loaders: ['babel'],
-        include: path.join(__dirname, 'client'),
+        exclude: path.join(__dirname, 'node_modules'),
       },
       {
         test: /\.css$/,

@@ -22,6 +22,7 @@ module.exports = {
     new ReactStaticPlugin({
       routes: './client/routes.js',
       stylesheet: '/app.css',
+      template: './template.js'
     }),
     new ExtractTextPlugin('[name].css', { allChunks: true }),
     new webpack.optimize.OccurenceOrderPlugin(),
@@ -41,7 +42,7 @@ module.exports = {
       {
         test: /\.js$/,
         loaders: ['babel'],
-        include: path.join(__dirname, 'client'),
+        exclude: path.join(__dirname, 'node_modules'),
       },
       {
         test: /\.css$/,

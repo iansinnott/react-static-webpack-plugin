@@ -20,6 +20,7 @@ module.exports = {
   plugins: [
     new ReactStaticPlugin({
       routes: './src/routes.js',
+      template: './template.js',
     }),
   ],
 
@@ -28,7 +29,7 @@ module.exports = {
       {
         test: /\.js$/,
         loaders: ['babel'],
-        include: path.join(__dirname, 'src'),
+        exclude: path.join(__dirname, 'node_modules'),
       },
     ],
   },

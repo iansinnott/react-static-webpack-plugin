@@ -2,9 +2,10 @@
 import isUndefined from 'lodash/isUndefined';
 import flattenDeep from 'lodash/flattenDeep';
 import React from 'react';
-import ReactDOM from 'react-dom/server';
+import { renderToString } from 'react-dom/server';
 import path from 'path';
 import Promise from 'bluebird';
+import vm from 'vm';
 
 import NodeTemplatePlugin from 'webpack/lib/node/NodeTemplatePlugin';
 import NodeTargetPlugin from 'webpack/lib/node/NodeTargetPlugin';
@@ -28,6 +29,14 @@ const hasNoComponent = route => {
   return isUndefined(route.props.path) || isUndefined(route.props.component);
 };
 
+/**
+ * Adde a namespace/prefix to a filename so as to avoid naming conflicts with
+ * things the user has created.
+ */
+export const prefix = (name: string): string => {
+  return `__react-static-webpack-plugin__${name}`;
+};
+
 type CompileAssetOptionsShape = {
   filepath: string,
   outputFilename: string,
@@ -37,6 +46,13 @@ type CompileAssetOptionsShape = {
 
 /**
  * Given the filepath of an asset (say js file) compile it and return the source
+ *
+ * [1]: For now i'm assuming that if there is an _originalSource key then the
+ * user is using uglifyjs. However, this may be a fragile check and could
+ * benefit from refactoring. The optimal solution would likely be to simply
+ * remove the uglify plugin from the child compiler. However this solution
+ * doesn't feel generic.
+ *
  */
 type CompileAsset = (a: CompileAssetOptionsShape) => Promise;
 export const compileAsset: CompileAsset = (opts) => {
@@ -46,6 +62,8 @@ export const compileAsset: CompileAsset = (opts) => {
     filename: outputFilename,
     publicPath: compilation.outputOptions.publicPath,
   };
+
+  debug(`Compiling "${filepath}"`);
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
   // childCompiler.apply(new NodeTemplatePlugin(outputOptions));
@@ -89,11 +107,30 @@ export const compileAsset: CompileAsset = (opts) => {
           return err.message + (err.error ? ':\n' + err.error : '');
         }).join('\n');
 
-        reject('Child compilation failed:\n' + errorDetails);
+        reject(new Error('Child compilation failed:\n' + errorDetails));
       } else {
         resolve(compilation.assets[outputFilename]);
       }
     });
+  })
+  .then((asset) => {
+    if (asset instanceof Error) {
+      debug(`${filepath} failed to copmile. Rejecting...`);
+      return Promise.reject(asset);
+    }
+
+    debug(`${filepath} compiled. Processing source...`);
+
+    if (asset._originalSource) {
+      debug('Source appears to be minified with UglifyJsPlugin. Using asset._originalSource for child compilation instead');
+    }
+
+    const source = asset._originalSource || asset.source(); // [1]
+    return vm.runInThisContext(source);
+  })
+  .catch((err) => {
+    debug(`${filepath} failed to copmile. Rejecting...`);
+    return Promise.reject(err);
   });
 };
 
@@ -213,18 +250,15 @@ export const renderSingleComponent: RenderSingleComponent = (imported, options, 
   let body;
 
   try {
-    body = ReactDOM.renderToString(<Component />);
+    body = renderToString(<Component />);
   } catch (err) {
     throw new Error(`Invalid single component. Make sure you added your component as the default export from ${options.routes}`);
   }
 
-  const { stylesheet, favicon, bundle } = options;
   const doc = render({
+    ...options,
     title: Component.title, // See NOTE
     body,
-    stylesheet,
-    favicon,
-    bundle,
   });
 
   return {
