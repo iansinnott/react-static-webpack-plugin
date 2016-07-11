@@ -6,6 +6,7 @@ import { renderToString } from 'react-dom/server';
 import path from 'path';
 import Promise from 'bluebird';
 import vm from 'vm';
+import webpack from 'webpack';
 
 import NodeTemplatePlugin from 'webpack/lib/node/NodeTemplatePlugin';
 import NodeTargetPlugin from 'webpack/lib/node/NodeTargetPlugin';
@@ -70,6 +71,7 @@ export const compileAsset: CompileAsset = (opts) => {
   // childCompiler.apply(new NodeTemplatePlugin(outputOptions));
   // childCompiler.apply(new NodeTargetPlugin());
   childCompiler.apply(new SingleEntryPlugin(context, filepath));
+  childCompiler.apply(new webpack.DefinePlugin({ REACT_STATIC_WEBPACK_PLUGIN: 'true' }));
   // childCompiler.apply(new LoaderTargetPlugin('node'));
 
   // console.dir(childCompiler._plugins, {colors: true})
