@@ -244,13 +244,31 @@ type Renderer = (a: OptionsShape) => string;
  * the page title. If this is not provided then the title will default to
  * whatever is provided in the template.
  */
-type RenderSingleComponent = (a: Object, b: OptionsShape, c: Renderer) => Asset;
-export const renderSingleComponent: RenderSingleComponent = (imported, options, render) => {
+type RenderSingleComponent = (a: Object, b: OptionsShape, c: Renderer, d: ?Object) => Asset;
+export const renderSingleComponent: RenderSingleComponent = (imported, options, render, store) => {
   const Component = imported.default || imported;
   let body;
 
+  let component = <Component />;
+
+  // Wrap the component in a Provider if the user passed us a redux store
+  if (store) {
+    debug('Store provider. Rendering single component with provider');
+    try {
+      const { Provider } = require('react-redux');
+      component = (
+        <Provider store={store}>
+          <Component />
+        </Provider>
+      );
+    } catch (err) {
+      err.message = `Could not require react-redux. Did you forget to install it?\n${err.message}`;
+      throw err;
+    }
+  }
+
   try {
-    body = renderToString(<Component />);
+    body = renderToString(component);
   } catch (err) {
     throw new Error(`Invalid single component. Make sure you added your component as the default export from ${options.routes}`);
   }

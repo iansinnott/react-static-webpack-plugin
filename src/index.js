@@ -94,8 +94,10 @@ StaticSitePlugin.prototype.apply = function(compiler) {
    * need and act accordingly.
    */
   compiler.plugin('make', (compilation, cb) => {
-    const { routes, template } = this.options;
-    compilationPromise = Promise.all([
+    const { routes, template, reduxStore } = this.options;
+
+    // Compile routes and template
+    const promises = [
       compileAsset({
         filepath: routes,
         outputFilename: prefix('routes.js'),
@@ -108,15 +110,25 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         compilation,
         context: compiler.context,
       }),
-    ])
+    ];
+
+    if (reduxStore) {
+      promises.push(
+        compileAsset({
+          filepath: reduxStore,
+          outputFilename: prefix('store.js'),
+          compilation,
+          context: compiler.context,
+        })
+      );
+    }
+
+    compilationPromise = Promise.all(promises)
     .catch(err => new Error(err))
     .finally(cb);
   });
 
   /**
-   * [2]: We want to allow the user the option of either export default routes or
-   * export routes.
-   *
    * NOTE: It turns out that vm.runInThisContext works fine while evaluate
    * failes. It seems evaluate the routes file in this example as empty, which
    * it should not be... Not sure if switching to vm from evaluate will cause
@@ -153,14 +165,20 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         throw assets;
       }
 
-      let [ routes, template ] = assets;
+      let [ routes, template, store ] = assets;
+
+      if (!routes) {
+        throw new Error(`Routes file compiled with empty source: ${this.options.routes}`);
+      }
+
+      routes = routes.routes || routes.default || routes;
 
       if (template) {
         template = template.default || template;
       }
 
-      if (!routes) {
-        throw new Error(`Routes file compiled with empty source: ${this.options.routes}`);
+      if (store) {
+        store = store.store || store.default || store;
       }
 
       if (this.options.template && !isFunction(template)) {
@@ -170,29 +188,46 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       // Set up the render function that will be used later on
       this.render = (props) => renderToStaticDocument(template, props);
 
-      const Routes = routes.routes || routes; // [2]
-
-      if (!isRoute(Routes)) {
+      if (!isRoute(routes)) {
         debug('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
-        compilation.assets['index.html'] = renderSingleComponent(Routes, this.options, this.render);
+        compilation.assets['index.html'] = renderSingleComponent(routes, this.options, this.render, store);
         return cb();
       }
 
-      const paths = getAllPaths(Routes);
+      const paths = getAllPaths(routes);
       debug('Parsed routes:', paths);
+
+      let Provider;
+      try {
+        Provider = require('react-redux').Provider;
+      } catch (err) {
+        err.message = `Looks like you provided the 'reduxStore' option but there was an error importing these dependencies. Did you forget to install 'redux' and 'react-redux'?\n${err.message}`;
+        throw err;
+      }
 
       // TODO: Remove everything we don't want
 
       Promise.all(paths.map(location => {
-        return promiseMatch({ routes: Routes, location })
+        return promiseMatch({ routes, location })
         .then(({ err, redirectLocation, renderProps }) => {
           if (err || !renderProps) {
             debug('Error matching route', location, err, renderProps);
             return Promise.reject(new Error(`Error matching route: ${location}`));
           }
 
+          let component = <RouterContext {...renderProps} />;
+
+          if (store) {
+            debug(`Redux store provided. Rendering "${location}" within Provider.`);
+            component = (
+              <Provider store={store}>
+                <RouterContext {...renderProps} />
+              </Provider>
+            );
+          }
+
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-          const body = renderToString(<RouterContext {...renderProps} />); // TOOD: This is where we would want to add a redux wrapper...
+          const body = renderToString(component); // TOOD: This is where we would want to add a redux wrapper...
           const assetKey = getAssetKey(location);
           const doc = this.render({
             ...this.options,
