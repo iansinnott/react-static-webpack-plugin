@@ -7,6 +7,7 @@ machine:
 dependencies:
   post:
     - (cd example/basic-with-router; npm install)
+    - (cd example/css-modules; npm install)
     - (cd example/deep-route-nesting; npm install)
     - (cd example/extract-css; npm install)
-    - (cd example/css-modules; npm install)
+    - (cd example/with-template; npm install)
