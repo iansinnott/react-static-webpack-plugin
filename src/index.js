@@ -1,38 +1,60 @@
-/* @flow */
-import path from 'path';
+/**
+ * @flow
+ *
+ * Webpack Plugin Resources:
+ * - https://github.com/andreypopp/webpack-stylegen/blob/master/lib/webpack/index.js#L5
+ * - https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
+ * - https://github.com/kevlened/debug-webpack-plugin/blob/master/index.js
+ * - https://github.com/ampedandwired/html-webpack-plugin/blob/v2.0.3/index.js
+ */
 import React from 'react';
-import ReactDOM from 'react-dom/server';
-import evaluate from 'eval';
+import { renderToString, renderToStaticMarkup } from 'react-dom/server';
 import { match, RouterContext } from 'react-router';
-import async from 'async';
+import Promise from 'bluebird';
+import isFunction from 'lodash/isFunction';
 
-import { name as packageName } from '../package.json';
-import { getAllPaths, log } from './utils.js';
-import { render } from './Html.js';
+import {
+  getAllPaths,
+  compileAsset,
+  isRoute,
+  renderSingleComponent,
+  getAssetKey,
+  debug,
+  prefix,
+} from './utils.js';
+import { Html } from './Html.js';
+import type {
+  OptionsShape,
+} from './constants.js';
+
+const renderToStaticDocument = (Component, props) => {
+  return '<!doctype html>' + renderToStaticMarkup(<Component {...props} />);
+};
+
+const validateOptions = (options) => {
+  if (!options.routes) {
+    throw new Error('No routes param provided');
+  }
+
+  if (!options.template) {
+    throw new Error('No template param provided');
+  }
+};
+
+function StaticSitePlugin(options: OptionsShape) {
+  validateOptions(options);
+  this.options = options;
+  this.render = (props) => renderToStaticDocument(Html, props);
+}
 
 /**
- * All source will be compiled with babel so ES6 goes
- *
- * Usage:
- *
- *   new StaticSitePlugin({ src: 'client/routes.js', ...options }),
- *
+ * The same as the RR match function, but promisified.
  */
-
-type Options = {
-  src: string,
-  bundle?: string,
-  stylesheet?: string,
-  favicon?: string,
-  template?: string,
-}
-
-function StaticSitePlugin(options: Options) {
-  this.options = options;
-  this.render = this.options.template
-    ? require(path.resolve(this.options.template))
-    : render;
-}
+const promiseMatch = (args) => new Promise((resolve, reject) => {
+  match(args, (err, redirectLocation, renderProps) => {
+    resolve({ err, redirectLocation, renderProps });
+  }, reject);
+});
 
 /**
  * compiler seems to be an instance of the Compiler
@@ -57,182 +79,176 @@ function StaticSitePlugin(options: Options) {
  *
  */
 StaticSitePlugin.prototype.apply = function(compiler) {
+  const extraneousAssets = ['routes.js', 'template.js', 'store.js'].map(prefix);
+  let compilationPromise;
+
+
+  /**
+   * Compile everything that needs to be compiled. This is what the 'make'
+   * plugin is excellent for.
+   */
+  compiler.plugin('make', (compilation, cb) => {
+    const { routes, template, reduxStore } = this.options;
+
+    // Compile routes and template
+    const promises = [
+      compileAsset({
+        filepath: routes,
+        outputFilename: prefix('routes.js'),
+        compilation,
+        context: compiler.context,
+      }),
+      compileAsset({
+        filepath: template,
+        outputFilename: prefix('template.js'),
+        compilation,
+        context: compiler.context,
+      }),
+    ];
+
+    if (reduxStore) {
+      promises.push(
+        compileAsset({
+          filepath: reduxStore,
+          outputFilename: prefix('store.js'),
+          compilation,
+          context: compiler.context,
+        })
+      );
+    }
+
+    compilationPromise = Promise.all(promises)
+    .catch(err => Promise.reject(new Error(err)))
+    .finally(cb);
+  });
+
+  /**
+   * NOTE: It turns out that vm.runInThisContext works fine while evaluate
+   * failes. It seems evaluate the routes file in this example as empty, which
+   * it should not be... Not sure if switching to vm from evaluate will cause
+   * breakage so i'm leaving it in here with this note for now.
+   *
+   * compiler seems to be an instance of the Compiler
+   * https://github.com/webpack/webpack/blob/master/lib/Compiler.js#L143
+   *
+   * NOTE: renderProps.routes is always passed as an array of route elements. For
+   * deeply nested routes the last element in the array is the route we want to
+   * get the props of, so we grab it out of the array and use it. This lets us do
+   * things like:
+   *
+   *   <Route title='Blah blah blah...' {...moreProps} />
+   *
+   * Then set the document title to the title defined on that route
+   *
+   * NOTE: Sometimes when matching routes we do not get an error but nore do we
+   * get renderProps. In my experience this usually means we hit an IndexRedirect
+   * or some form of Route that doesn't actually have a component to render. In
+   * these cases we simply keep on moving and don't render anything.
+   *
+   * TODO:
+   * - Allow passing a function for title
+   */
   compiler.plugin('emit', (compilation, cb) => {
-    const asset = findAsset(this.options.src, compilation);
+    compilationPromise
+    .catch((err) => {
+      debug('dafuq');
+      cb(err);
+    }) // TODO: Eval failed, likely a syntax error in build
+    .then((assets) => {
+      if (assets instanceof Error) {
+        throw assets;
+      }
 
-    if (!asset) {
-      throw new Error(`Output file not found: ${this.options.src}`);
-    }
+      // Remove all the now extraneous compiled assets and any sourceamps that
+      // may have been generated for them
+      extraneousAssets.forEach(key => {
+        debug(`Removing extraneous asset and associated sourcemap. Asset name: "${key}"`);
+        delete compilation.assets[key];
+        delete compilation.assets[key + '.map'];
+      });
 
-    const source = evaluate(asset.source(), true);
-    const Component = source.routes || source;
-    log('src evaluated to Component:', Component);
+      let [ routes, template, store ] = assets;
 
-    // NOTE: If Symbol(react.element) was removed this would no longer work
-    if (!isValidComponent(Component)) {
-      log('Component was invalid. Throwing error.');
-      throw new Error(`${packageName} -- options.src entry point must export a valid React Component.`);
-    }
+      if (!routes) {
+        throw new Error(`Entry file compiled with empty source: ${this.options.routes}`);
+      }
 
-    if (!isRoute(Component)) {
-      log('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
-      compilation.assets['index.html'] = renderSingleComponent(Component, this.options, this.render);
-      return cb();
-    }
+      routes = routes.routes || routes.default || routes;
 
-    const paths = getAllPaths(Component);
-    log('Parsed routes:', paths);
+      if (template) {
+        template = template.default || template;
+      }
 
-    async.forEach(paths,
-      (location, callback) => {
-        match({ routes: Component, location }, (err, redirectLocation, renderProps) => {
-          // Skip if something goes wrong. See NOTE above.
+      if (store) {
+        store = store.store || store.default || store;
+      }
+
+      if (this.options.template && !isFunction(template)) {
+        throw new Error(`Template file did not compile with renderable default export: ${this.options.template}`);
+      }
+
+      // Set up the render function that will be used later on
+      this.render = (props) => renderToStaticDocument(template, props);
+
+      // Support rendering a single component without the need for react router.
+      if (!isRoute(routes)) {
+        debug('Entrypoint specified with `routes` option did not return a Route component. Rendering as individual component instead.');
+        compilation.assets['index.html'] = renderSingleComponent(routes, this.options, this.render, store);
+        return cb();
+      }
+
+      const paths = getAllPaths(routes);
+      debug('Parsed routes:', paths);
+
+      // Make sure the user has installed redux dependencies
+      let Provider;
+      try {
+        Provider = require('react-redux').Provider;
+      } catch (err) {
+        err.message = `Looks like you provided the 'reduxStore' option but there was an error importing these dependencies. Did you forget to install 'redux' and 'react-redux'?\n${err.message}`;
+        throw err;
+      }
+
+      Promise.all(paths.map(location => {
+        return promiseMatch({ routes, location })
+        .then(({ err, redirectLocation, renderProps }) => {
           if (err || !renderProps) {
-            log('Error matching route', err, renderProps);
-            return callback();
+            debug('Error matching route', location, err, renderProps);
+            return Promise.reject(new Error(`Error matching route: ${location}`));
+          }
+
+          let component = <RouterContext {...renderProps} />;
+
+          if (store) {
+            debug(`Redux store provided. Rendering "${location}" within Provider.`);
+            component = (
+              <Provider store={store}>
+                <RouterContext {...renderProps} />
+              </Provider>
+            );
           }
 
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-          const body = ReactDOM.renderToString(<RouterContext {...renderProps} />);
-          const { stylesheet, favicon, bundle } = this.options;
+          const body = renderToString(component);
           const assetKey = getAssetKey(location);
           const doc = this.render({
+            ...this.options,
             title: route.title,
             body,
-            stylesheet,
-            favicon,
-            bundle,
           });
 
           compilation.assets[assetKey] = {
             source() { return doc; },
             size() { return doc.length; },
           };
-
-          callback();
         });
-      },
-      err => {
+      }))
+      .catch((err) => {
         if (err) throw err;
-        cb();
-      }
-    );
+      })
+      .finally(cb);
+    });
   });
 };
-
-/**
- * @param {string} src
- * @param {Compilation} compilation
- */
-function findAsset(src, compilation) {
-  const asset = compilation.assets[src];
-
-  // Found it. It was a key within assets
-  if (asset) return asset;
-
-  // Didn't find it in assets, it must be a chunk
-
-  const webpackStatsJson = compilation.getStats().toJson();
-  let chunkValue = webpackStatsJson.assetsByChunkName[src];
-
-  // Uh oh, couldn't find it as a chunk value either. This indicates a failure
-  // to find the asset. The caller should handle a falsey value as it sees fit.
-  if (!chunkValue) return null;
-
-  // Webpack outputs an array for each chunk when using sourcemaps
-  if (chunkValue instanceof Array) {
-    chunkValue = chunkValue[0]; // Is the main bundle always the first element?
-  }
-
-  return compilation.assets[chunkValue];
-}
-
-/**
- * Given a string location (i.e. path) return a relevant HTML filename.
- * Ex: '/' -> 'index.html'
- * Ex: '/about' -> 'about.html'
- * Ex: '/about/' -> 'about/index.html'
- * Ex: '/about/team' -> 'about/team.html'
- *
- * NOTE: Don't want leading slash
- * i.e. 'path/to/file.html' instead of '/path/to/file.html'
- *
- * NOTE: There is a lone case where the users specifices a not found route that
- * results in a '/*' location. In this case we output 404.html, since it's
- * assumed that this is a 404 route. See the RR changelong for details:
- * https://github.com/rackt/react-router/blob/1.0.x/CHANGES.md#notfound-route
- */
-function getAssetKey(location: string): string {
-  const basename = path.basename(location);
-  const dirname = path.dirname(location).slice(1); // See NOTE above
-  let filename;
-
-  if (!basename || location.slice(-1) === '/') {
-    filename = 'index.html';
-  } else if (basename === '*') {
-    filename = '404.html';
-  } else {
-    filename = basename + '.html';
-  }
-
-  return dirname ? (dirname + path.sep + filename) : filename;
-}
-
-/**
- * Test if a React Element is a React Router Route or not. Note that this tests
- * the actual object (i.e. React Element), not a constructor. As such we
- * immediately deconstruct out the type property as that is what we want to
- * test.
- *
- * NOTE: Testing whether Component.type was an instanceof Route did not work.
- *
- * NOTE: This is a fragile test. The React Router API is notorious for
- * introducing breaking changes, so of the RR team changed the manditory path
- * and component props this would fail.
- */
-function isRoute({ type: component }): boolean {
-  return component && component.propTypes.path && component.propTypes.component;
-}
-
-/**
- * Test if a component is a valid React component.
- *
- * NOTE: This is a pretty wonky test. React.createElement wasn't doing it for
- * me. It seemed to be giving false positives.
- *
- * @param {any} component
- * @return {boolean}
- */
-function isValidComponent(Component): boolean {
-  const { type } = React.createElement(Component);
-  return typeof type === 'object' || typeof type === 'function';
-}
-
-/**
- * If not provided with any React Router Routes we try to render whatever asset
- * was passed to the plugin as a React component. The use case would be anyone
- * who doesn't need/want to add RR as a dependency to their app and instead only
- * wants a single HTML file output.
- *
- * NOTE: In the case of a single component we use the static prop 'title' to get
- * the page title. If this is not provided then the title will default to
- * whatever is provided in the template.
- */
-function renderSingleComponent(Component, options, render) { // eslint-disable-line no-shadow
-  const body = ReactDOM.renderToString(<Component />);
-  const { stylesheet, favicon, bundle } = options;
-  const doc = render({
-    title: Component.title, // See NOTE
-    body,
-    stylesheet,
-    favicon,
-    bundle,
-  });
-
-  return {
-    source() { return doc; },
-    size() { return doc.length; },
-  };
-}
 
 module.exports = StaticSitePlugin;

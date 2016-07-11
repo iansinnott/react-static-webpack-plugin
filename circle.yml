@@ -1,9 +1,13 @@
 ## Customize machine
 machine:
   node:
-    version: 5.11.1
+    version: 6.2.2
 
 ## Install example deps as well so that we can run tests there
 dependencies:
   post:
-    - (cd example; npm install)
+    - (cd example/basic-with-router; npm install)
+    - (cd example/css-modules; npm install)
+    - (cd example/deep-route-nesting; npm install)
+    - (cd example/extract-css; npm install)
+    - (cd example/with-template; npm install)

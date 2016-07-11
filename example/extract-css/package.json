@@ -1,0 +1,68 @@
+{
+  "name": "react-static-boilerplate",
+  "version": "0.2.0",
+  "description": "A barebones boilerplate for building apps with React",
+  "engines": {
+    "node": "^4.2"
+  },
+  "scripts": {
+    "clean": "rimraf public",
+    "eslint": "eslint client",
+    "lint": "npm run -s eslint",
+    "conf": "babel-node ./scripts/generate-nginx-conf.js",
+    "test": "echo 'No tests specified.'",
+    "start:dev": "babel-node ./server.js",
+    "start": "npm run start:dev",
+    "build:static": "NODE_ENV=production webpack --config webpack.config.prod.js",
+    "build": "npm run clean && npm run build:static",
+    "preversion": "npm test",
+    "postversion": "git push && git push --tags",
+    "bump:patch": "npm version patch -m \"v%s\"",
+    "bump:minor": "npm version minor -m \"v%s\"",
+    "bump": "npm run bump:patch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iansinnott/react-static-boilerplate"
+  },
+  "bugs": {
+    "url": "https://github.com/iansinnott/react-static-boilerplate/issues"
+  },
+  "author": "Ian Sinnott <ian@iansinnott.com> (http://iansinnott.com)",
+  "license": "MIT",
+  "homepage": "",
+  "devDependencies": {
+    "autoprefixer-loader": "^3.1.0",
+    "axis": "^0.5.2",
+    "babel-cli": "^6.5.1",
+    "babel-core": "^6.5.1",
+    "babel-loader": "^6.2.2",
+    "babel-plugin-react-transform": "^2.0.0",
+    "babel-preset-es2015": "^6.5.0",
+    "babel-preset-react": "^6.5.0",
+    "babel-preset-react-hmre": "^1.1.0",
+    "css-loader": "^0.23.0",
+    "eslint": "^1.10.3",
+    "eslint-config-airbnb": "^5.0.0",
+    "eslint-plugin-react": "^3.12.0",
+    "express": "^4.13.3",
+    "extract-text-webpack-plugin": "^1.0.1",
+    "file-loader": "^0.8.5",
+    "normalize.css": "^3.0.3",
+    "react": "^0.14.3",
+    "react-dom": "^0.14.3",
+    "react-transform-catch-errors": "^1.0.0",
+    "react-transform-hmr": "^1.0.1",
+    "redbox-react": "^1.2.0",
+    "rimraf": "^2.4.4",
+    "rupture": "^0.6.1",
+    "style-loader": "^0.13.0",
+    "stylus": "~0.54.5",
+    "stylus-loader": "~2.1.0",
+    "url-loader": "^0.5.7",
+    "webpack": "^1.12.9",
+    "webpack-dev-middleware": "^1.4.0",
+    "webpack-hot-middleware": "^2.6.0"
+  },
+  "dependencies": {}
+}

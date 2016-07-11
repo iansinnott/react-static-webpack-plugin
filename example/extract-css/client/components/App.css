@@ -1,0 +1,22 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: #fafafa;
+  font-size: 18px;
+}
+
+.App {
+  background: #222;
+  min-width: 320px;
+  padding: 20px;
+  text-align: center;
+}
+
+.App img {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+}

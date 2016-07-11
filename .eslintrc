@@ -12,6 +12,12 @@
     // Indent 2 spaces always
     "indent": [2, 2],
 
+    "no-shadow": [0],
+
+    "array-bracket-spacing": [0],
+
+    "prefer-const": [0],
+
     "func-names": [0],
 
     "no-use-before-define": [2, "nofunc"],
