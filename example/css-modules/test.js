@@ -1,9 +1,11 @@
 import test from 'ava';
 import webpack from 'webpack';
+import fs from 'fs';
+import path from 'path';
 
 import options from './webpack.config.prod.js';
 
-test.cb('Compiles files that import CSS', t => {
+test.cb('Supports minification as well as CSS modules', t => {
   webpack(options, function(err, stats) {
     if (err) {
       return t.end(err);
@@ -20,10 +22,14 @@ test.cb('Compiles files that import CSS', t => {
     t.true(files.includes('app.css'));
     t.true(files.includes('app.js'));
 
-    const bundle = assets[files.indexOf('app.js')];
+    // Test CSS module compilation. Plain text classname should not be present
+    const outputFilepath = path.join(options.output.path, 'index.html');
+    const outputFileContents = fs.readFileSync(outputFilepath, { encoding: 'utf8' });
+    t.false(outputFileContents.includes('testableModuleClassName'));
 
     // Test size in MB. We want to make sure this bundle was minified since we
     // are using the minify JS plugin
+    const bundle = assets[files.indexOf('app.js')];
     t.true((bundle.size / 1000) < 300);
 
     t.end();
