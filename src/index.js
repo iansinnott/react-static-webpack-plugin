@@ -86,12 +86,6 @@ StaticSitePlugin.prototype.apply = function(compiler) {
   /**
    * Compile everything that needs to be compiled. This is what the 'make'
    * plugin is excellent for.
-   *
-   * TODO: Support compiling template
-   * TODO: Support compiling reduxStore
-   *
-   * We likely need to do a Promise.all sort of thing to compile every asset we
-   * need and act accordingly.
    */
   compiler.plugin('make', (compilation, cb) => {
     const { routes, template, reduxStore } = this.options;

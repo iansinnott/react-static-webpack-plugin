@@ -7,13 +7,7 @@ import path from 'path';
 import Promise from 'bluebird';
 import vm from 'vm';
 import webpack from 'webpack';
-
-import NodeTemplatePlugin from 'webpack/lib/node/NodeTemplatePlugin';
-import NodeTargetPlugin from 'webpack/lib/node/NodeTargetPlugin';
-import LoaderTargetPlugin from 'webpack/lib/LoaderTargetPlugin';
-import LibraryTemplatePlugin from 'webpack/lib/LibraryTemplatePlugin';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
-
 
 import type { OptionsShape } from './constants.js';
 
@@ -47,13 +41,6 @@ type CompileAssetOptionsShape = {
 
 /**
  * Given the filepath of an asset (say js file) compile it and return the source
- *
- * [1]: For now i'm assuming that if there is an _originalSource key then the
- * user is using uglifyjs. However, this may be a fragile check and could
- * benefit from refactoring. The optimal solution would likely be to simply
- * remove the uglify plugin from the child compiler. However this solution
- * doesn't feel generic.
- *
  */
 type CompileAsset = (a: CompileAssetOptionsShape) => Promise;
 export const compileAsset: CompileAsset = (opts) => {
@@ -68,13 +55,8 @@ export const compileAsset: CompileAsset = (opts) => {
   debug(`Compiling "${filepath}"`);
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
-  // childCompiler.apply(new NodeTemplatePlugin(outputOptions));
-  // childCompiler.apply(new NodeTargetPlugin());
   childCompiler.apply(new SingleEntryPlugin(context, filepath));
   childCompiler.apply(new webpack.DefinePlugin({ REACT_STATIC_WEBPACK_PLUGIN: 'true' }));
-  // childCompiler.apply(new LoaderTargetPlugin('node'));
-
-  // console.dir(childCompiler._plugins, {colors: true})
 
   // TODO: Is this fragile? How does it compare to using the require.resolve as
   // shown here:
@@ -86,15 +68,17 @@ export const compileAsset: CompileAsset = (opts) => {
   // top-level node_modules folder
   const extractTextPluginPath = path.resolve(context, './node_modules/extract-text-webpack-plugin');
 
-  // NOTE: This is taken directly from extract-text-webpack-plugin
-  // https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
   childCompiler.plugin('this-compilation', (compilation) => {
+    /**
+     * NOTE: This is taken directly from extract-text-webpack-plugin
+     * https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
+     *
+     * It seems that returning true allows the use of css modules while
+     * setting this equal to false makes the import of css modules fail, which
+     * means rendered pages do not have the correct classnames.
+     * loaderContext[extractTextPluginPath] = false;
+     */
     compilation.plugin('normal-module-loader', (loaderContext) => {
-      // TODO: Make note about this. It seems that returning true allows the use
-      // of css modules while setting this equal to false makes the import of
-      // css modules fail, which means rendered pages do not have the correct
-      // classnames.
-      // loaderContext[extractTextPluginPath] = false;
       loaderContext[extractTextPluginPath] = (content, opt) => {
         return true;
       };
