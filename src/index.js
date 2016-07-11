@@ -79,7 +79,7 @@ const promiseMatch = (args) => new Promise((resolve, reject) => {
  *
  */
 StaticSitePlugin.prototype.apply = function(compiler) {
-  const extraneousAssets = ['routes.js', 'template.js'];
+  const extraneousAssets = ['routes.js', 'template.js', 'store.js'].map(prefix);
   let compilationPromise;
 
 
@@ -124,7 +124,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
     }
 
     compilationPromise = Promise.all(promises)
-    .catch(err => new Error(err))
+    .catch(err => Promise.reject(new Error(err)))
     .finally(cb);
   });
 
@@ -165,10 +165,18 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         throw assets;
       }
 
+      // Remove all the now extraneous compiled assets and any sourceamps that
+      // may have been generated for them
+      extraneousAssets.forEach(key => {
+        debug(`Removing extraneous asset and associated sourcemap. Asset name: "${key}"`);
+        delete compilation.assets[key];
+        delete compilation.assets[key + '.map'];
+      });
+
       let [ routes, template, store ] = assets;
 
       if (!routes) {
-        throw new Error(`Routes file compiled with empty source: ${this.options.routes}`);
+        throw new Error(`Entry file compiled with empty source: ${this.options.routes}`);
       }
 
       routes = routes.routes || routes.default || routes;
@@ -188,8 +196,9 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       // Set up the render function that will be used later on
       this.render = (props) => renderToStaticDocument(template, props);
 
+      // Support rendering a single component without the need for react router.
       if (!isRoute(routes)) {
-        debug('Entrypoint or chunk name did not return a Route component. Rendering as individual component instead.');
+        debug('Entrypoint specified with `routes` option did not return a Route component. Rendering as individual component instead.');
         compilation.assets['index.html'] = renderSingleComponent(routes, this.options, this.render, store);
         return cb();
       }
@@ -197,6 +206,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       const paths = getAllPaths(routes);
       debug('Parsed routes:', paths);
 
+      // Make sure the user has installed redux dependencies
       let Provider;
       try {
         Provider = require('react-redux').Provider;
@@ -204,8 +214,6 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         err.message = `Looks like you provided the 'reduxStore' option but there was an error importing these dependencies. Did you forget to install 'redux' and 'react-redux'?\n${err.message}`;
         throw err;
       }
-
-      // TODO: Remove everything we don't want
 
       Promise.all(paths.map(location => {
         return promiseMatch({ routes, location })
@@ -227,7 +235,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           }
 
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-          const body = renderToString(component); // TOOD: This is where we would want to add a redux wrapper...
+          const body = renderToString(component);
           const assetKey = getAssetKey(location);
           const doc = this.render({
             ...this.options,

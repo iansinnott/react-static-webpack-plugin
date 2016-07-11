@@ -62,6 +62,7 @@ export const compileAsset: CompileAsset = (opts) => {
     filename: outputFilename,
     publicPath: compilation.outputOptions.publicPath,
   };
+  let rawAssets = {};
 
   debug(`Compiling "${filepath}"`);
 
@@ -96,6 +97,33 @@ export const compileAsset: CompileAsset = (opts) => {
         return true;
       };
     });
+
+    /**
+     * In order to evaluate the raw compiled source files of assets instead of
+     * the minified or otherwise optimized version we hook into here and hold on
+     * to any chunk assets before they are compiled.
+     *
+     * NOTE: It is uncertain so far whether this source is actually the same as
+     * the unoptimized source of the file in question. I.e. it may not be the
+     * fullly compiled / bundled module code we want since this is not the emit
+     * callback.
+     */
+    compilation.plugin('optimize-chunk-assets', (chunks, cb) => {
+      const files = [];
+
+      // Collect all asset names
+      chunks.forEach((chunk) => {
+        chunk.files.forEach((file) => files.push(file));
+      });
+      compilation.additionalChunkAssets.forEach((file) => files.push(file));
+
+      rawAssets = files.reduce((agg, file) => {
+        agg[file] = compilation.assets[file];
+        return agg;
+      }, {});
+
+      cb();
+    });
   });
 
   // Run the compilation async and return a promise
@@ -109,7 +137,10 @@ export const compileAsset: CompileAsset = (opts) => {
 
         reject(new Error('Child compilation failed:\n' + errorDetails));
       } else {
-        resolve(compilation.assets[outputFilename]);
+        if (rawAssets[outputFilename]) {
+          debug(`Using raw source for ${filepath}`);
+        }
+        resolve(rawAssets[outputFilename] || compilation.assets[outputFilename]); // See 'optimize-chunk-assets' above
       }
     });
   })
@@ -121,12 +152,7 @@ export const compileAsset: CompileAsset = (opts) => {
 
     debug(`${filepath} compiled. Processing source...`);
 
-    if (asset._originalSource) {
-      debug('Source appears to be minified with UglifyJsPlugin. Using asset._originalSource for child compilation instead');
-    }
-
-    const source = asset._originalSource || asset.source(); // [1]
-    return vm.runInThisContext(source);
+    return vm.runInThisContext(asset.source());
   })
   .catch((err) => {
     debug(`${filepath} failed to copmile. Rejecting...`);
@@ -253,7 +279,7 @@ export const renderSingleComponent: RenderSingleComponent = (imported, options, 
 
   // Wrap the component in a Provider if the user passed us a redux store
   if (store) {
-    debug('Store provider. Rendering single component with provider');
+    debug('Store provider. Rendering single component within Provider.');
     try {
       const { Provider } = require('react-redux');
       component = (
