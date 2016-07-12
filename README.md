@@ -20,26 +20,24 @@ $ npm install --save-dev react-static-webpack-plugin
 
 ```js
 // webpack.config.js
-const StaticSitePlugin = require('react-static-webpack-plugin');
+const ReactStaticPlugin = require('react-static-webpack-plugin');
 
 module.exports = {
 
   entry: {
-    app: ['./client/index.js'],
+    app: './client/index.js',
   },
 
   output: {
     path: path.join(__dirname, 'public'),
     filename: '[name].js',
-    libraryTarget: 'umd', // IMPORTANT! You must output to UMD for the plugin to work
     publicPath: '/',
   },
 
   plugins: [
-    new StaticSitePlugin({
-      src: 'app',             // Chunk or file name
-      bundle: '/app.js',      // Path to JS bundle
-      stylesheet: '/app.css', // Path to stylesheet (if any)
+    new ReactStaticPlugin({
+      routes: './client/index.js', // Path to routes file
+      template: './template.js',    // Path to JSX template file
     }),
   ],
 
@@ -54,9 +52,7 @@ import React from 'react';
 import { render } from 'react-dom';
 import App from './components/App.js';
 
-// Don't try to render unless we're in the browser
-if (typeof document !== 'undefined')
-  render(<App />, document.getElementById('root'));
+render(<App />, document.getElementById('root'));
 
 // Be sure to export the React component so that it can be statically rendered
 export default App;
@@ -72,7 +68,7 @@ Creating sites with multiple static pages using React Router is very similar to 
 // client/index.js
 import React from 'react';
 import { render } from 'react-dom';
-import { Router } from 'react-router';
+import { Router, browserHistory } from 'react-router';
 
 // Since we're rendering static files don't forget to use browser history.
 // Server's don't get the URL hash during a request.
@@ -81,17 +77,10 @@ import createBrowserHistory from 'history/lib/createBrowserHistory';
 // Import your routes so that you can pass them to the <Router /> component
 import routes from './routes.js';
 
-// Only render in the browser
-if (typeof document !== 'undefined') {
-  render(
-    <Router routes={routes} history={createBrowserHistory()} />,
-    document.getElementById('root')
-  );
-}
-
-// Export the routes here so that StaticSitePlugin can access them and build
-// the static files.
-export * from './routes.js';
+render(
+  <Router routes={routes} history={browserHistory} />,
+  document.getElementById('root')
+);
 ```
 
 ```js
@@ -147,7 +136,7 @@ products/zephyr/nomad.html    2.53 kB          [emitted]
 
 ### Full Example
 
-For a full example you can run locally see the [React Static Boilerplate][boilerplate].
+For a full example you can run locally see the [`examples/` directory](examples) or the [React Static Boilerplate][boilerplate].
 
 ## Current Limitations
 
@@ -168,74 +157,97 @@ I have some thoughts on this and am actively exploring how it might work but not
 
 ## API
 
-### `new StaticSitePlugin({ ...options })`
+### `new ReactStaticPlugin({ ...options })`
 
-#### `src` (required)
-
-**Type:** `string`
-
-The name of the chunk or file that exports your app's React Router config. Example: `'app'`
-
-#### `bundle`
+#### `routes` (required)
 
 **Type:** `string`
 
-**Default:** `'/app.js'`
+The path to your routes component. Your routes component should be exported either as `routes` or the default: `'./client/routes.js'`
 
-Path to your bundled application. This is not required but you will most likely need to specify a path to your `bundle` unless it happens to be the default.
-
-#### `stylesheet`
+#### `template` (required)
 
 **Type:** `string`
 
-**Default:** `'/app.css'`
+Path to the file that exports your template React component. Example: `./template.js`
 
-Path to your external stylesheet, if any.
-
-#### `favicon`
-
-**Type:** `string`
-
-**Default:** `''`
-
-Path to your favicon, if any. Example `'/favicon.ico'`
-
-#### `template`
-
-**Type:** `string`
-
-**Default:** `null`
-
-Path to the file that exports your template function. Example: `./template.js`
-
-With this option you can provide the path to a custom function that will render the layout for your static pages. The function will be passed an options object that will give you access to the page title and the rendered component:
+With this option you can provide the path to a custom React component that will render the layout for your static pages. The function will be passed an options object that will give you access to the page title and the rendered component:
 
 ```js
 // template.js
-module.exports = function(opts) {
-  return `
-<!doctype html>
-<html lang='en'>
-  <head>
-    <title>${opts.title}</title>
-  </head>
-  <body>
-    <div id='root'>
-      ${body}
-    </div>
-    <script src='/app.js' />
-  </body>
-</html>
-  `.trim();
-}
+import React from 'react';
+
+const Html = (props) => (
+  <html lang='en'>
+    <head>
+      <meta charSet='utf-8' />
+      <meta httpEquiv='X-UA-Compatible' content='IE=edge' />
+      <meta name='viewport' content='width=device-width, minimum-scale=1.0' />
+      <title>{props.title}</title>
+      <script dangerouslySetInnerHTML={{ __html: 'console.log("analytics")' }} />
+    </head>
+    <body>
+      <div id='root' dangerouslySetInnerHTML={{ __html: props.body }} />
+      <script src='/app.js' />
+    </body>
+  </html>
+);
+
+export default Html;
 ```
 
-**NOTE:** This example will only work if the version of Node you're running supports template strings. If not, you can use concatenation or any third party library.
+**NOTE:** Your template component will be run through Webpack using whatever transformations or loaders you already have set up for the filetype specified. For example, if you are using babel for all JS files then your template file will be run through babel using whatever settings you have set up in `.babelrc`.
+
+**NOTE:** You can pass arbitrary data to your template component by adding to the options object passed when you initialize the plugin:
+
+```js
+new ReactStaticPlugin({
+  routes: './client/index.js',
+  template: './template.js',
+
+  // Some arbitrary data...
+  someData: 'Welcome to Webpack plugins',
+}),
+```
+
+Then access the data within your template component:
+
+```js
+// template.js
+import React from 'react';
+
+const Html = (props) => (
+  <html lang='en'>
+    <head>
+      <title>{props.title}</title>
+    </head>
+    <body>
+      <h1>{props.someData}</h1>
+      <div id='root' dangerouslySetInnerHTML={{ __html: props.body }} />
+      <script src='/app.js' />
+    </body>
+  </html>
+);
+
+export default Html;
+```
+
+#### `reduxStore`
+
+**Type:** `string`
+
+**Default:** undefined
+
+The path to your Redux store. This option allows you to pass a store to react-static-webpack-plugin. This allows for Redux support. The store you pass in will be used in tandem with the react-redux `<Provider store={store}>` component to render your Redux app to a static site.
+
+**Examples coming soon**
 
 ## Roadmap
 
 - [x] Custom HTML layout option
 - [x] Improved testing
+- [x] JSX templating support
+- [x] Redux support
 - [ ] Support for dynamic routes + data (i.e. `<Route path='post/:id' />`)
 - [ ] Custom 404 page filename option
 
@@ -263,11 +275,19 @@ npm link .
 
 Then you can link it within any local NPM project:
 
+Now when you `require` or `import` it you will get the local version.
+
 ```
 npm link react-static-webpack-plugin
 ```
 
-Now when you `require` or `import` it you will get the local version.
+#### To `test`
+
+```
+npm test
+```
+
+Runs the suite of Wepback tests.
 
 [boilerplate]: https://github.com/iansinnott/react-static-boilerplate
 
