@@ -200,13 +200,16 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       const paths = getAllPaths(routes);
       debug('Parsed routes:', paths);
 
-      // Make sure the user has installed redux dependencies
+      // Make sure the user has installed redux dependencies if they passed in a
+      // store
       let Provider;
-      try {
-        Provider = require('react-redux').Provider;
-      } catch (err) {
-        err.message = `Looks like you provided the 'reduxStore' option but there was an error importing these dependencies. Did you forget to install 'redux' and 'react-redux'?\n${err.message}`;
-        throw err;
+      if (store) {
+        try {
+          Provider = require('react-redux').Provider;
+        } catch (err) {
+          err.message = `Looks like you provided the 'reduxStore' option but there was an error importing these dependencies. Did you forget to install 'redux' and 'react-redux'?\n${err.message}`;
+          throw err;
+        }
       }
 
       Promise.all(paths.map(location => {
