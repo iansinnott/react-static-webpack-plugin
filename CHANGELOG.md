@@ -4,8 +4,8 @@ This was a major overhaul and includes many improvements as well as some breakin
 
 **Improvements**
 
-* Support for Redux ([#7][])
-* Support for JSX templates ([#3][])
+* Support for Redux (#7)
+* Support for JSX templates (#3)
 * All assets including templates are compiled through Webpack
 * Improved testing. Will help minimize breakage as new features are added in the future.
 
