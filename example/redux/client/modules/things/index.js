@@ -1,10 +1,11 @@
 /* @flow */
 import { fromJS, OrderedMap, Record } from 'immutable';
-import { v4 } from 'node-uuid';
 
 import * as Forms from '../forms';
+import UUID from 'node-uuid';
 
-const uuid = () => v4();
+// A totally fake uuid function
+const uuid = () => UUID.v4();
 
 const ADD_THING = 'redux-example/things/ADD_THING';
 export const FORM_ID = 'redux-example/things/_form'
