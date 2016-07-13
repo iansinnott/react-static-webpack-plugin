@@ -210,7 +210,7 @@ new ReactStaticPlugin({
 }),
 ```
 
-Then access the data within your template component:
+Then access the data within your template component using `props`:
 
 ```js
 // template.js
@@ -231,6 +231,12 @@ const Html = (props) => (
 
 export default Html;
 ```
+
+The `props` object will have everything you passed in the options object to the plugin as well as:
+
+* `body`: A string of HTML to be rendered in the document.
+* `title`: A string that is passed from each of your Route components
+* `initialState`: If you pass the `reduxStore` option you will get access to the result of calling `store.getState()`. **NOTE:** Since this plugin makes no assumptions about the shape of your app state it is up to you to stringify it and place it in the DOM if you wish to use it.
 
 #### `reduxStore`
 
