@@ -10,11 +10,6 @@ import vm from 'vm';
 import webpack from 'webpack';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 
-import NodeTemplatePlugin from 'webpack/lib/node/NodeTemplatePlugin';
-import NodeTargetPlugin from 'webpack/lib/node/NodeTargetPlugin';
-import LoaderTargetPlugin from 'webpack/lib/LoaderTargetPlugin';
-import LibraryTemplatePlugin from 'webpack/lib/LibraryTemplatePlugin';
-
 import type { OptionsShape } from './constants.js';
 
 /**
@@ -66,11 +61,8 @@ export const compileAsset: CompileAsset = (opts) => {
   debug(`Compiling "${filepath}"`);
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
-  // childCompiler.apply(new NodeTemplatePlugin(outputOptions));
-  // childCompiler.apply(new NodeTargetPlugin());
   childCompiler.apply(new SingleEntryPlugin(context, filepath));
   childCompiler.apply(new webpack.DefinePlugin({ REACT_STATIC_WEBPACK_PLUGIN: 'true' }));
-  // childCompiler.apply(new LoaderTargetPlugin('node'));
 
   // TODO: Is this fragile? How does it compare to using the require.resolve as
   // shown here:
@@ -308,7 +300,7 @@ export const renderSingleComponent: RenderSingleComponent = (imported, options, 
 
       // Make sure initialState will be provided to the template. Don't mutate
       // options directly
-      options = { ...options, initialState: store.getState() };
+      options = { ...options, initialState: store.getState() }; // eslint-disable-line no-param-reassign
     } catch (err) {
       err.message = `Could not require react-redux. Did you forget to install it?\n${err.message}`;
       throw err;
@@ -342,14 +334,15 @@ export const renderSingleComponent: RenderSingleComponent = (imported, options, 
  * @param {string}  hash
  */
 
-export const addHash = (options: Object, hash: string): Object => {
+type AddHash = (a: Object, b: string) => Object;
+export const addHash: AddHash = (options, hash) => {
   return Object.keys(options).reduce((previous, current) => {
     if (!isString(options[current])) {
       previous[current] = options[current];
       return previous;
-    };
+    }
 
     previous[current] = (options[current] && hash ? options[current].replace('[hash]', hash) : options[current]);
     return previous;
   }, {});
-}
+};
