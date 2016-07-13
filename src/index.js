@@ -150,10 +150,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
    */
   compiler.plugin('emit', (compilation, cb) => {
     compilationPromise
-    .catch((err) => {
-      debug('dafuq');
-      cb(err);
-    }) // TODO: Eval failed, likely a syntax error in build
+    .catch(cb) // TODO: Eval failed, likely a syntax error in build
     .then((assets) => {
       if (assets instanceof Error) {
         throw assets;
@@ -164,6 +161,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       getExtraneousAssets().forEach(key => {
         debug(`Removing extraneous asset and associated sourcemap. Asset name: "${key}"`);
         delete compilation.assets[key];
+        delete compilation.assets[key + '.map'];
       });
 
       let [ routes, template, store ] = assets;
