@@ -31,7 +31,9 @@ const fromJSON = (things) => {
 const initialState = fromJS({
   loading: false,
   error: null,
-  data: fromJSON([uuid(), uuid(), uuid()].map((id, i) => ({ id, text: `Thing ${i}` }))),
+  data: fromJSON(
+    [uuid(), uuid(), uuid()].map((id, i) => ({ id, text: `Testable Title for Thing ${i}` }))
+  ),
 });
 
 /* **************************************************************************
@@ -42,7 +44,7 @@ export default function reducer(state = initialState, action) {
   const { type, payload } = action;
   switch (type) {
   case ADD_THING:
-    return state.set(payload.id, payload);
+    return state.setIn(['data', payload.id], payload);
   default:
     return state;
   }

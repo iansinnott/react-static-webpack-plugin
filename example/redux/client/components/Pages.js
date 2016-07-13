@@ -58,7 +58,7 @@ class Home extends React.Component {
   };
 
   render() {
-    const { formValues } = this.props;
+    const { formValues, things } = this.props;
     return (
       <div className={cx('page')}>
         <div className={cx('siteTitle')}>
@@ -73,13 +73,18 @@ class Home extends React.Component {
             placeholder='Enter a new thing...'
             type='text' />
         </form>
+        <div className={cx('things')}>
+          {things.valueSeq().map(x => (
+            <p key={x.id}>{x.text}</p>
+          ))}
+        </div>
       </div>
     );
   }
 }
 
 const mapStateToProps = (state) => ({
-  things: state.get('things'),
+  things: state.getIn(['things', 'data']),
   formValues: getFormValues(state),
 });
 
