@@ -29,9 +29,10 @@ test.cb('Supports redux apps that must be wrapped in <Provider>', t => {
     // Test CSS module compilation. Plain text classname should not be present
     const outputFilepath = path.join(options.output.path, 'index.html');
     const outputFileContents = fs.readFileSync(outputFilepath, { encoding: 'utf8' });
-    t.false(outputFileContents.includes('Testable Title for Thing 0'));
-    t.false(outputFileContents.includes('Testable Title for Thing 1'));
-    t.false(outputFileContents.includes('Testable Title for Thing 2'));
+    t.true(outputFileContents.includes('window.__initial_state'));
+    t.true(outputFileContents.includes('Testable Title for Thing 0'));
+    t.true(outputFileContents.includes('Testable Title for Thing 1'));
+    t.true(outputFileContents.includes('Testable Title for Thing 2'));
 
     // Test size in MB. We want to make sure this bundle was minified since we
     // are using the minify JS plugin
