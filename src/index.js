@@ -15,6 +15,7 @@ import isFunction from 'lodash/isFunction';
 
 import {
   getAllPaths,
+  getExtraneousAssets,
   compileAsset,
   isRoute,
   renderSingleComponent,
@@ -79,7 +80,6 @@ const promiseMatch = (args) => new Promise((resolve, reject) => {
  *
  */
 StaticSitePlugin.prototype.apply = function(compiler) {
-  const extraneousAssets = ['routes.js', 'template.js', 'store.js'].map(prefix);
   let compilationPromise;
 
 
@@ -161,10 +161,9 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 
       // Remove all the now extraneous compiled assets and any sourceamps that
       // may have been generated for them
-      extraneousAssets.forEach(key => {
+      getExtraneousAssets().forEach(key => {
         debug(`Removing extraneous asset and associated sourcemap. Asset name: "${key}"`);
         delete compilation.assets[key];
-        delete compilation.assets[key + '.map'];
       });
 
       let [ routes, template, store ] = assets;

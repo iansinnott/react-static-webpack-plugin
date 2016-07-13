@@ -9,12 +9,22 @@ import vm from 'vm';
 import webpack from 'webpack';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 
+import NodeTemplatePlugin from 'webpack/lib/node/NodeTemplatePlugin';
+import NodeTargetPlugin from 'webpack/lib/node/NodeTargetPlugin';
+import LoaderTargetPlugin from 'webpack/lib/LoaderTargetPlugin';
+import LibraryTemplatePlugin from 'webpack/lib/LibraryTemplatePlugin';
+
 import type { OptionsShape } from './constants.js';
 
 /**
  * A simple debug logger
  */
 export const debug = require('debug')('react-static-webpack-plugin');
+
+let extraneousAssets: string[] = [];
+
+// Allow other files to get access to the extraneous assets
+export const getExtraneousAssets = () => extraneousAssets;
 
 /**
  * This is not a very sophisticated checking method. Assuming we already know
@@ -55,8 +65,11 @@ export const compileAsset: CompileAsset = (opts) => {
   debug(`Compiling "${filepath}"`);
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
+  // childCompiler.apply(new NodeTemplatePlugin(outputOptions));
+  // childCompiler.apply(new NodeTargetPlugin());
   childCompiler.apply(new SingleEntryPlugin(context, filepath));
   childCompiler.apply(new webpack.DefinePlugin({ REACT_STATIC_WEBPACK_PLUGIN: 'true' }));
+  // childCompiler.apply(new LoaderTargetPlugin('node'));
 
   // TODO: Is this fragile? How does it compare to using the require.resolve as
   // shown here:
@@ -95,7 +108,7 @@ export const compileAsset: CompileAsset = (opts) => {
      * callback.
      */
     compilation.plugin('optimize-chunk-assets', (chunks, cb) => {
-      const files = [];
+      const files: string[] = [];
 
       // Collect all asset names
       chunks.forEach((chunk) => {
@@ -108,11 +121,24 @@ export const compileAsset: CompileAsset = (opts) => {
         return agg;
       }, {});
 
+      // Update the extraneous assets to remove
+      // TODO: This does not actually collect all the apropriate assets. What we
+      // want is EVERY file that was compiled during this compilation, since we
+      // don't want to output any of them. So far this only gets the associated
+      // js files, like routes.js (with prefix)
+      extraneousAssets = [ ...extraneousAssets, ...files ];
+
       cb();
     });
   });
 
   // Run the compilation async and return a promise
+  // NOTE: For some reason, require simply doesn't work as expected in the
+  // evaluated string src code. This was meant to be a temporary fix to fix the
+  // issue of requiring node-uuid. It would be better to find a way to fully
+  // support any module code. Specifically, code like this failse because the
+  // require function simply does not return the built in crypto module:
+  // https://github.com/crypto-browserify/crypto-browserify/blob/v3.2.6/rng.js
   return new Promise((resolve, reject) => {
     childCompiler.runAsChild(function(err, entries, childCompilation) {
       // Resolve / reject the promise
@@ -123,10 +149,15 @@ export const compileAsset: CompileAsset = (opts) => {
 
         reject(new Error('Child compilation failed:\n' + errorDetails));
       } else {
+        let asset = compilation.assets[outputFilename];
+
+        // See 'optimize-chunk-assets' above
         if (rawAssets[outputFilename]) {
           debug(`Using raw source for ${filepath}`);
+          asset = rawAssets[outputFilename];
         }
-        resolve(rawAssets[outputFilename] || compilation.assets[outputFilename]); // See 'optimize-chunk-assets' above
+
+        resolve(asset);
       }
     });
   })
@@ -138,10 +169,10 @@ export const compileAsset: CompileAsset = (opts) => {
 
     debug(`${filepath} compiled. Processing source...`);
 
-    return vm.runInThisContext(asset.source());
+    return vm.runInNewContext(asset.source(), { ...global, crypto: require('crypto') }); // See NOTE
   })
   .catch((err) => {
-    debug(`${filepath} failed to copmile. Rejecting...`);
+    debug(`${filepath} failed to process. Rejecting...`);
     return Promise.reject(err);
   });
 };
