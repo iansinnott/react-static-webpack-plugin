@@ -22,6 +22,7 @@ import {
   getAssetKey,
   debug,
   prefix,
+  addHash,
 } from './utils.js';
 import { Html } from './Html.js';
 import type {
@@ -118,8 +119,8 @@ StaticSitePlugin.prototype.apply = function(compiler) {
     }
 
     compilationPromise = Promise.all(promises)
-    .catch(err => Promise.reject(new Error(err)))
-    .finally(cb);
+      .catch(err => Promise.reject(new Error(err)))
+      .finally(cb);
   });
 
   /**
@@ -164,7 +165,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         delete compilation.assets[key + '.map'];
       });
 
-      let [ routes, template, store ] = assets;
+      let [routes, template, store] = assets;
 
       if (!routes) {
         throw new Error(`Entry file compiled with empty source: ${this.options.routes}`);
@@ -190,7 +191,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       // Support rendering a single component without the need for react router.
       if (!isRoute(routes)) {
         debug('Entrypoint specified with `routes` option did not return a Route component. Rendering as individual component instead.');
-        compilation.assets['index.html'] = renderSingleComponent(routes, this.options, this.render, store);
+        compilation.assets['index.html'] = renderSingleComponent(routes, addHash(this.options, compilation.hash), this.render, store);
         return cb();
       }
 
@@ -236,11 +237,10 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           const body = renderToString(component);
           const assetKey = getAssetKey(location);
           const doc = this.render({
-            ...options,
+            ...addHash(options, compilation.hash),
             title: route.title,
             body,
           });
-
           compilation.assets[assetKey] = {
             source() { return doc; },
             size() { return doc.length; },

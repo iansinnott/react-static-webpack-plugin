@@ -1,6 +1,7 @@
 /* @flow */
 import isUndefined from 'lodash/isUndefined';
 import flattenDeep from 'lodash/flattenDeep';
+import isString from 'lodash/isString';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import path from 'path';
@@ -331,3 +332,24 @@ export const renderSingleComponent: RenderSingleComponent = (imported, options, 
     size() { return doc.length; },
   };
 };
+
+
+/**
+ * Add hash to all options that includes '[hash]' ex: bundle.[hash].js
+ * NOTE: Only one hash for all files. So even if the css did not change it will get a new hash if the js changed.
+ *
+ * @param {Options} options
+ * @param {string}  hash
+ */
+
+export const addHash = (options: Object, hash: string): Object => {
+  return Object.keys(options).reduce((previous, current) => {
+    if (!isString(options[current])) {
+      previous[current] = options[current];
+      return previous;
+    };
+
+    previous[current] = (options[current] && hash ? options[current].replace('[hash]', hash) : options[current]);
+    return previous;
+  }, {});
+}
