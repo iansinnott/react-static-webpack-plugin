@@ -10,6 +10,15 @@ const Html = (props) => (
       <link rel='stylesheet' type='text/css' href='/app.css' />
       <link rel='icon' type='image/x-icon' href='/favicon.ico' />
       <title>{props.title}</title>
+
+      {/*
+        Pass the initial state to our template so that our store can grab it
+        from the window object on initialization.
+
+        NOTE: In this example we use Immutable.js, so we need to call toJS on
+        state. However, if you are not using Immutable this will not be necessary
+      */}
+      <script dangerouslySetInnerHTML={{ __html: `window.__initial_state = ${JSON.stringify(props.initialState.toJS())}` }} />
     </head>
     <body>
       <div id='root' dangerouslySetInnerHTML={{ __html: props.body }} />
