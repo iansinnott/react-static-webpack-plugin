@@ -1,0 +1,19 @@
+@require '../lib/vars.styl'
+
+.page
+  composes page from '../lib/shared.styl'
+
+.siteTitle
+  composes siteTitle from '../lib/shared.styl'
+
+
+.form
+  width 100%
+  input
+    width 100%
+    border solid 1px #999
+    padding 10px
+    border-radius 3px
+    &:focus
+      border-color blue
+      box-shadow inset 0 0 2px blue

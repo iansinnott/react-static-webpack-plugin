@@ -1,0 +1,14 @@
+@require '../vars.styl'
+
+// The dots in the three bounce
+.Spinner
+  text-align center
+
+  :global .three-bounce > div
+    background-color passion-pink
+    animation-duration 0.8s
+    width 8px
+    height 8px
+
+    &:not(:last-child)
+      margin-right 5px

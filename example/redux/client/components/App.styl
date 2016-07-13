@@ -1,0 +1,206 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:400,100,300,700italic,400italic)
+
+@require '../lib/vars.styl'
+
+.page
+  composes page from '../lib/shared.styl'
+
+.siteTitle
+  composes siteTitle from '../lib/shared.styl'
+
+*
+  box-sizing border-box
+
+body
+  background react-blue
+  font-family lato
+  font-size 18px
+  color black
+
+h1
+  margin 20px 0
+
+pre
+  font-family mono
+  line-height 1.5
+  border-radius 3px
+  border 1px solid border-gray
+
+a
+input
+textarea
+button
+  border none
+  outline none
+  +desktop()
+    appearance none
+
+.App
+  min-width 320px
+
+  h1
+    color pink
+    font-weight 300
+    font-size 52px
+
+.logo
+  border-radius 50%
+  display block
+  margin-right 20px
+  +mobile()
+    margin-right 0
+  img
+    height 40px
+    width auto
+
+/* **************************************************************************
+ * Header
+ * *************************************************************************/
+.Header
+  background white
+  padding 0 20px
+  display flex
+  align-items center
+  justify-content space-between
+  height 60px
+  margin-bottom 60px
+  +mobile()
+    margin-bottom 0
+  a
+    display block
+
+  .logo
+    padding 0
+    img
+      border-radius 50%
+      display block
+      height 50px
+
+  .active
+    color black
+
+.middle
+.right
+  a
+    display inline-block
+    text-decoration none
+    font-size 1rem
+    &:not(:first-child)
+      margin-left 20px
+
+
+.middle
+  display flex
+  height 100%
+  +mobile()
+    display none
+
+  a
+    color pink
+    display flex
+    align-items center
+    height 100%
+
+.right
+  a
+    padding 5px 8px
+    border-radius 3px
+
+.logIn
+  color pink
+  &.active
+    color black
+
+.signUp
+  color white
+  background pink
+  &.active
+    color white
+    background lighten(black, 20%)
+
+
+/* **************************************************************************
+ * Footer
+ * *************************************************************************/
+.Footer
+  composes page from '../lib/shared.styl'
+
+  .logo
+    display block
+    width 150px
+    height auto
+
+  form
+    +mobile()
+      width 100%
+      input
+        width 100%
+        border-bottom 1px solid pink
+        padding .5rem 0
+        margin-bottom .5rem
+      button
+        padding 10px
+    p
+      color pink
+
+  .cols
+    display flex
+    flex-shrink 0
+    width 100%
+    justify-content space-between
+    +below(700px)
+      flex-direction column
+
+  .col
+    flex 1 20%
+    +below(700px)
+      margin-top 20px
+    a
+      display block
+      font-size 14px
+      text-decoration none
+      color lighten(black, 20%)
+      &:hover
+        color black
+        text-decoration underline
+      &.active
+        color black
+        text-decoration underline
+      +below(700px)
+        line-height 2
+        font-size 1rem
+
+    h4
+      margin-top 0
+
+  .social
+    +below(700px)
+      select
+        margin-top 20px
+        width 100%
+        option
+          text-align center
+    h4
+      margin-top 20px
+      +below(700px)
+        display none
+  .icons
+    a
+      display inline-block
+      width 40px
+    img
+      opacity .8
+      width 100%
+      max-width auto
+      &:hover
+        opacity 1
+
+.copy
+  display flex
+  justify-content space-between
+  width 100%
+  color darken(white, 20%)
+  +below(700px)
+    margin-top 20px
+  small
+    display block

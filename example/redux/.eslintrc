@@ -1,0 +1,59 @@
+{
+  "extends": "rackt",
+  "parser": "babel-eslint",
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "plugins": [
+    "react"
+  ],
+  "rules": {
+
+    // Babel handles strict for us so it should never be manually added
+    "strict": [2, "never"],
+
+    // Single quotes on JSX components
+    "jsx-quotes": [2, "prefer-single"],
+
+    "semi": [1, "always"],
+
+    "no-console": [0],
+
+    "comma-dangle": [1, "always-multiline"],
+
+    "array-bracket-spacing": [0],
+
+    "space-before-function-paren": [1, {"anonymous": "never", "named": "never"}],
+
+    "object-curly-spacing": [1],
+
+    // Indent 2 spaces always
+    "indent": [2, 2],
+
+    "arrow-body-style": [0],
+
+    // Having unsed args is allowed b/c its good for consistency and reminding
+    // what vars are available. Ex: (req, res, next) => res.send(/* ... */)
+    "no-unused-vars": [1, {"vars": "all", "args": "none"}],
+
+    // We need to switch to hot loader v3 before doing this
+    "react/prefer-stateless-function": [0],
+
+    // Do not require closing brackets to be on same line as opening brackets.
+    // This is good in theory but often very ugly when applied to a lone closing
+    // bracket of an opening tag:
+    // <div
+    //   someProp={true}
+    // >
+    // Or
+    // <div
+    //   someProp={true}>
+    "react/jsx-closing-bracket-location": [0],
+    "react/prefer-es6-class": [1],
+    "react/jsx-uses-vars": [2],
+    "react/jsx-uses-react": [2],
+  },
+}
