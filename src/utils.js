@@ -296,3 +296,19 @@ export const renderSingleComponent: RenderSingleComponent = (imported, options, 
     size() { return doc.length; },
   };
 };
+
+
+/**
+ * Add hash to all options that includes '[hash]' ex: bundle.[hash].js
+ * NOTE: Only one hash for all files. So even if the css did not change it will get a new hash if the js changed.
+ *
+ * @param {Options} options
+ * @param {string}  hash
+ */
+
+export function addHash(options: Object, hash: string) : Object {
+  return Object.keys(options).reduce((previous, current) => {
+    previous[current] = (options[current] && hash ? options[current].replace('[hash]', hash) : options[current]);
+    return previous;
+  }, {});
+}

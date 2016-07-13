@@ -21,6 +21,7 @@ import {
   getAssetKey,
   debug,
   prefix,
+  addHash,
 } from './utils.js';
 import { Html } from './Html.js';
 import type {
@@ -118,8 +119,8 @@ StaticSitePlugin.prototype.apply = function(compiler) {
     }
 
     compilationPromise = Promise.all(promises)
-    .catch(err => Promise.reject(new Error(err)))
-    .finally(cb);
+      .catch(err => Promise.reject(new Error(err)))
+      .finally(cb);
   });
 
   /**
@@ -150,107 +151,107 @@ StaticSitePlugin.prototype.apply = function(compiler) {
    */
   compiler.plugin('emit', (compilation, cb) => {
     compilationPromise
-    .catch((err) => {
-      debug('dafuq');
-      cb(err);
-    }) // TODO: Eval failed, likely a syntax error in build
-    .then((assets) => {
-      if (assets instanceof Error) {
-        throw assets;
-      }
-
-      // Remove all the now extraneous compiled assets and any sourceamps that
-      // may have been generated for them
-      extraneousAssets.forEach(key => {
-        debug(`Removing extraneous asset and associated sourcemap. Asset name: "${key}"`);
-        delete compilation.assets[key];
-        delete compilation.assets[key + '.map'];
-      });
-
-      let [ routes, template, store ] = assets;
-
-      if (!routes) {
-        throw new Error(`Entry file compiled with empty source: ${this.options.routes}`);
-      }
-
-      routes = routes.routes || routes.default || routes;
-
-      if (template) {
-        template = template.default || template;
-      }
-
-      if (store) {
-        store = store.store || store.default || store;
-      }
-
-      if (this.options.template && !isFunction(template)) {
-        throw new Error(`Template file did not compile with renderable default export: ${this.options.template}`);
-      }
-
-      // Set up the render function that will be used later on
-      this.render = (props) => renderToStaticDocument(template, props);
-
-      // Support rendering a single component without the need for react router.
-      if (!isRoute(routes)) {
-        debug('Entrypoint specified with `routes` option did not return a Route component. Rendering as individual component instead.');
-        compilation.assets['index.html'] = renderSingleComponent(routes, this.options, this.render, store);
-        return cb();
-      }
-
-      const paths = getAllPaths(routes);
-      debug('Parsed routes:', paths);
-
-      // Make sure the user has installed redux dependencies if they passed in a
-      // store
-      let Provider;
-      if (store) {
-        try {
-          Provider = require('react-redux').Provider;
-        } catch (err) {
-          err.message = `Looks like you provided the 'reduxStore' option but there was an error importing these dependencies. Did you forget to install 'redux' and 'react-redux'?\n${err.message}`;
-          throw err;
-        }
-      }
-
-      Promise.all(paths.map(location => {
-        return promiseMatch({ routes, location })
-        .then(({ err, redirectLocation, renderProps }) => {
-          if (err || !renderProps) {
-            debug('Error matching route', location, err, renderProps);
-            return Promise.reject(new Error(`Error matching route: ${location}`));
-          }
-
-          let component = <RouterContext {...renderProps} />;
-
-          if (store) {
-            debug(`Redux store provided. Rendering "${location}" within Provider.`);
-            component = (
-              <Provider store={store}>
-                <RouterContext {...renderProps} />
-              </Provider>
-            );
-          }
-
-          const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-          const body = renderToString(component);
-          const assetKey = getAssetKey(location);
-          const doc = this.render({
-            ...this.options,
-            title: route.title,
-            body,
-          });
-
-          compilation.assets[assetKey] = {
-            source() { return doc; },
-            size() { return doc.length; },
-          };
-        });
-      }))
       .catch((err) => {
-        if (err) throw err;
-      })
-      .finally(cb);
-    });
+        debug('dafuq');
+        cb(err);
+      }) // TODO: Eval failed, likely a syntax error in build
+      .then((assets) => {
+        if (assets instanceof Error) {
+          throw assets;
+        }
+
+        // Remove all the now extraneous compiled assets and any sourceamps that
+        // may have been generated for them
+        extraneousAssets.forEach(key => {
+          debug(`Removing extraneous asset and associated sourcemap. Asset name: "${key}"`);
+          delete compilation.assets[key];
+          delete compilation.assets[key + '.map'];
+        });
+
+        let [routes, template, store] = assets;
+
+        if (!routes) {
+          throw new Error(`Entry file compiled with empty source: ${this.options.routes}`);
+        }
+
+        routes = routes.routes || routes.default || routes;
+
+        if (template) {
+          template = template.default || template;
+        }
+
+        if (store) {
+          store = store.store || store.default || store;
+        }
+
+        if (this.options.template && !isFunction(template)) {
+          throw new Error(`Template file did not compile with renderable default export: ${this.options.template}`);
+        }
+
+        // Set up the render function that will be used later on
+        this.render = (props) => renderToStaticDocument(template, props);
+
+        // Support rendering a single component without the need for react router.
+        if (!isRoute(routes)) {
+          debug('Entrypoint specified with `routes` option did not return a Route component. Rendering as individual component instead.');
+          compilation.assets['index.html'] = renderSingleComponent(routes, addHash(this.options, compilation.hash), this.render, store);
+          return cb();
+        }
+
+        const paths = getAllPaths(routes);
+        debug('Parsed routes:', paths);
+
+        // Make sure the user has installed redux dependencies if they passed in a
+        // store
+        let Provider;
+        if (store) {
+          try {
+            Provider = require('react-redux').Provider;
+          } catch (err) {
+            err.message = `Looks like you provided the 'reduxStore' option but there was an error importing these dependencies. Did you forget to install 'redux' and 'react-redux'?\n${err.message}`;
+            throw err;
+          }
+        }
+
+        Promise.all(paths.map(location => {
+          return promiseMatch({ routes, location })
+            .then(({ err, redirectLocation, renderProps }) => {
+              if (err || !renderProps) {
+                debug('Error matching route', location, err, renderProps);
+                return Promise.reject(new Error(`Error matching route: ${location}`));
+              }
+
+              let component = <RouterContext {...renderProps} />;
+
+              if (store) {
+                debug(`Redux store provided. Rendering "${location}" within Provider.`);
+                component = (
+                  <Provider store={store}>
+                    <RouterContext {...renderProps} />
+                  </Provider>
+                );
+              }
+
+              const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
+              const body = renderToString(component);
+              const assetKey = getAssetKey(location);
+              const doc = this.render({
+                ...addHash(this.options, compilation.hash),
+                title: route.title,
+                body,
+              });
+
+              compilation.assets[assetKey] = {
+                source() { return doc; },
+                size() { return doc.length; },
+              };
+            });
+        }))
+    .catch((err) => {
+      if (err) throw err;
+    })
+    .finally(cb);
+      });
   });
 };
 
