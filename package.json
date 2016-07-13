@@ -1,6 +1,6 @@
 {
   "name": "react-static-webpack-plugin",
-  "version": "0.5.0",
+  "version": "1.0.1",
   "description": "Build full static sites using React, React Router and Webpack",
   "license": "MIT",
   "repository": "iansinnott/react-static-webpack-plugin",
@@ -16,7 +16,7 @@
   "scripts": {
     "lint": "eslint src example/*.js ./example/src",
     "test": "npm run lint && npm run build && npm run test:unit",
-    "test:unit": "ava --verbose test.js example/test.js",
+    "test:unit": "cross-env NODE_ENV=production ava --verbose test.js example/**/test.js",
     "watch": "babel -w -d dist src",
     "start": "npm run watch",
     "clean": "rimraf dist",
@@ -43,14 +43,9 @@
     "generator"
   ],
   "dependencies": {
-    "async": "^1.5.1",
+    "bluebird": "^3.4.1",
     "debug": "^2.2.0",
-    "eval": "^0.1.1",
-    "history": "^1.17.0",
-    "lodash": "^4.11.1",
-    "react": "^15.0.2",
-    "react-dom": "^15.0.2",
-    "react-router": "^2.4.0"
+    "lodash": "^4.11.1"
   },
   "devDependencies": {
     "ava": "^0.14.0",
@@ -61,9 +56,26 @@
     "babel-preset-react": "^6.3.13",
     "babel-preset-stage-0": "^6.3.13",
     "babel-register": "^6.8.0",
+    "cross-env": "~1.0.8",
     "eslint": "^1.10.3",
     "eslint-config-airbnb": "^2.1.1",
     "eslint-plugin-react": "^3.13.1",
-    "rimraf": "^2.5.0"
+    "extract-text-webpack-plugin": "~1.0.1",
+    "history": "~3.0.0",
+    "react": "~15.2.1",
+    "react-dom": "~15.2.1",
+    "react-redux": "~4.4.5",
+    "react-router": "~2.5.2",
+    "redux": "~3.5.2",
+    "rimraf": "^2.5.0",
+    "webpack": "~1.13.1"
+  },
+  "peerDependencies": {
+    "history": "^1.17.0",
+    "react": "^15.0.2",
+    "react-dom": "^15.0.2",
+    "react-router": "^2.4.0",
+    "webpack": "~1.13.1",
+    "extract-text-webpack-plugin": "^1.0.1"
   }
 }

@@ -5,8 +5,6 @@ export const Html = ({
   title = 'Rainbow Unicorns',
   bundle = '/app.js',
   body = '',
-  favicon = '',
-  stylesheet = '',
 }) => (
   <html lang='en'>
     <head>
@@ -14,8 +12,6 @@ export const Html = ({
       <meta httpEquiv='X-UA-Compatible' content='IE=edge' />
       <meta name='viewport' content='width=device-width, minimum-scale=1.0' />
       <title>{title}</title>
-      {favicon && <link rel='shortcut icon' href={favicon} />}
-      {stylesheet && <link rel='stylesheet' href={stylesheet} />}
     </head>
     <body>
       <div id='root' dangerouslySetInnerHTML={{ __html: body }} />
@@ -43,5 +39,6 @@ Html.propTypes = {
  * @param {object} props
  * @return {string}
  */
-export const render = props =>
-  '<!doctype html>' + renderToStaticMarkup(<Html {...props} />);
+export const render = (props): string => {
+  return '<!doctype html>' + renderToStaticMarkup(<Html {...props} />);
+};

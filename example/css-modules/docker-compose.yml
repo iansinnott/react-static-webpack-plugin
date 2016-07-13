@@ -1,0 +1,10 @@
+# This Docker Compose config will get a full static site up and running on nginx
+# quickly so you can test out how the site will run on a real server.
+static:
+  image: nginx:1.9
+  ports:
+    - "8080:80"
+    - "8443:443"
+  volumes:
+    - "./nginx.conf:/etc/nginx/nginx.conf"
+    - "./public:/var/www/html"
