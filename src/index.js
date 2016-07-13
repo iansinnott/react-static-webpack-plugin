@@ -220,6 +220,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           }
 
           let component = <RouterContext {...renderProps} />;
+          let { options } = this;
 
           if (store) {
             debug(`Redux store provided. Rendering "${location}" within Provider.`);
@@ -228,13 +229,16 @@ StaticSitePlugin.prototype.apply = function(compiler) {
                 <RouterContext {...renderProps} />
               </Provider>
             );
+
+            // Make sure initialState will be provided to the template
+            options = { ...options, initialState: store.getState() };
           }
 
           const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
           const body = renderToString(component);
           const assetKey = getAssetKey(location);
           const doc = this.render({
-            ...this.options,
+            ...options,
             title: route.title,
             body,
           });

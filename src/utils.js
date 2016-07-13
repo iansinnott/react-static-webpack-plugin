@@ -304,6 +304,10 @@ export const renderSingleComponent: RenderSingleComponent = (imported, options, 
           <Component />
         </Provider>
       );
+
+      // Make sure initialState will be provided to the template. Don't mutate
+      // options directly
+      options = { ...options, initialState: store.getState() };
     } catch (err) {
       err.message = `Could not require react-redux. Did you forget to install it?\n${err.message}`;
       throw err;
