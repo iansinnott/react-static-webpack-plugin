@@ -11,8 +11,8 @@ import { LogIn, SignUp } from './components/SignUp.js';
  */
 
 export const routes = (
-  <Route path='/' title='Redux Example | Home' component={App}>
-    <IndexRoute component={Home} />
+  <Route path='/' component={App}>
+    <IndexRoute title='Redux Example | Home' component={Home} />
 
     {/* Pages */}
     <Route path='who' title='Redux Example | Who' component={Who} />
