@@ -21,7 +21,7 @@ test.cb.before(t => {
   });
 });
 
-test.cb('Outputs the desired files', t => {
+test('Outputs the desired files', t => {
   const { assets } = stats.toJson();
   const files = assets.map(x => x.name);
 
@@ -33,11 +33,9 @@ test.cb('Outputs the desired files', t => {
   t.true(files.includes('404.html'));
   t.true(files.includes('app.css'));
   t.true(files.includes('app.js'));
-
-  t.end();
 });
 
-test.cb('Supports redux apps that must be wrapped in <Provider>', t => {
+test('Supports redux apps that must be wrapped in <Provider>', t => {
   const outputFilepath = path.join(options.output.path, 'index.html');
   const outputFileContents = fs.readFileSync(outputFilepath, { encoding: 'utf8' });
 
@@ -45,16 +43,12 @@ test.cb('Supports redux apps that must be wrapped in <Provider>', t => {
   t.true(outputFileContents.includes('Testable Title for Thing 0'));
   t.true(outputFileContents.includes('Testable Title for Thing 1'));
   t.true(outputFileContents.includes('Testable Title for Thing 2'));
-
-  t.end();
 });
 
-test.cb('Bundle was minified', t => {
+test('Bundle was minified', t => {
   const { assets } = stats.toJson();
   const files = assets.map(x => x.name);
   const bundle = assets[files.indexOf('app.js')];
 
   t.true((bundle.size / 1000) < 500);
-
-  t.end();
 });

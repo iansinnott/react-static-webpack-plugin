@@ -4,7 +4,7 @@ import webpack from 'webpack';
 import options from './webpack.config.prod.js';
 
 test.cb('Compiles files that import CSS', t => {
-  webpack(options, function(err, stats) {
+  webpack(options, (err, stats) => {
     if (err) {
       return t.end(err);
     } else if (stats.hasErrors()) {

@@ -21,7 +21,7 @@ test.cb.before(t => {
   });
 });
 
-test.cb('Outputs the desired files', t => {
+test('Outputs the desired files', t => {
   const { assets } = stats.toJson();
   const files = assets.map(x => x.name);
 
@@ -30,11 +30,9 @@ test.cb('Outputs the desired files', t => {
   t.true(files.includes('404.html'));
   t.true(files.includes('app.css'));
   t.true(files.includes('app.js'));
-
-  t.end();
 });
 
-test.cb('Compiles local CSS classes (CSS Modules)', t => {
+test('Compiles local CSS classes (CSS Modules)', t => {
   const { assets } = stats.toJson();
   const files = assets.map(x => x.name);
   const outputFilepath = path.join(options.output.path, 'index.html');
@@ -42,11 +40,9 @@ test.cb('Compiles local CSS classes (CSS Modules)', t => {
 
   // Simply make sure this classname isn't found
   t.false(outputFileContents.includes('testableModuleClassName'));
-
-  t.end();
 });
 
-test.cb('Supports minification', t => {
+test('Supports minification', t => {
   const { assets } = stats.toJson();
   const files = assets.map(x => x.name);
   const bundle = assets[files.indexOf('app.js')];
@@ -54,6 +50,4 @@ test.cb('Supports minification', t => {
   // Test size in MB. We want to make sure this bundle was minified since we
   // are using the minify JS plugin
   t.true((bundle.size / 1000) < 300);
-
-  t.end();
 });
