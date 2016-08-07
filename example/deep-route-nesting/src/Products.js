@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 
 export class Products extends React.Component {
@@ -48,4 +49,3 @@ export class ProductColor extends React.Component {
     );
   }
 }
-
