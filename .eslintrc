@@ -43,5 +43,8 @@
     // app
     "react/prop-types": [0],
 
+    // This was simply too anoying for a project that is not a react app
+    "react/jsx-closing-bracket-location": [0],
+
   },
 }
