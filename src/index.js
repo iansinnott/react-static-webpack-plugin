@@ -59,7 +59,7 @@ const promiseMatch = (args) => new Promise((resolve, reject) => {
 });
 
 /**
- * compiler seems to be an instance of the Compiler
+ * `compiler` is an instance of the Compiler
  * https://github.com/webpack/webpack/blob/master/lib/Compiler.js#L143
  *
  * NOTE: renderProps.routes is always passed as an array of route elements. For
