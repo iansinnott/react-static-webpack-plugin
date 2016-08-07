@@ -7,7 +7,7 @@
   },
   "scripts": {
     "clean": "rimraf public",
-    "eslint": "eslint client",
+    "eslint": "eslint src",
     "lint": "npm run -s eslint",
     "conf": "babel-node ./scripts/generate-nginx-conf.js",
     "test": "echo 'No tests specified.'",

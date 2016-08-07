@@ -8,7 +8,7 @@ module.exports = {
   devtool: 'source-map',
 
   entry: {
-    app: ['./client/index.js'],
+    app: ['./src/index.js'],
   },
 
   output: {
@@ -18,18 +18,18 @@ module.exports = {
   },
 
   plugins: [
-    // new webpack.optimize.OccurenceOrderPlugin(),
-    // new webpack.DefinePlugin({
-    //   'process.env': {
-    //     'NODE_ENV': JSON.stringify('production'),
-    //   },
-    // }),
-    // new webpack.optimize.UglifyJsPlugin({
-    //   screw_ie8: true,
-    //   compressor: { warnings: false },
-    // }),
+    new webpack.optimize.OccurenceOrderPlugin(),
+    new webpack.DefinePlugin({
+      'process.env': {
+        'NODE_ENV': JSON.stringify('production'),
+      },
+    }),
+    new webpack.optimize.UglifyJsPlugin({
+      screw_ie8: true,
+      compressor: { warnings: false },
+    }),
     new ReactStaticPlugin({
-      routes: './client/components/App.js',
+      routes: './src/components/App.js',
       template: './template.js',
       stylesheet: '/app.css',
     }),
@@ -47,22 +47,6 @@ module.exports = {
         test: /\.css$/,
         loader: ExtractTextPlugin.extract('style', 'css'),
       },
-      // {
-      //   test: /\.styl/,
-      //   loader: ExtractTextPlugin.extract('style', 'css?modules&importLoaders=2!autoprefixer!stylus'),
-      // },
-      // {
-      //   test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-      //   loaders: ['url?limit=10000&mimetype=application/font-woff'],
-      // },
-      // {
-      //   test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-      //   loaders: ['file'],
-      // },
-      // {
-      //   test: /\.(png|jpg|gif|ico)$/,
-      //   loaders: ['file?name=[name].[ext]'],
-      // },
     ],
   },
 

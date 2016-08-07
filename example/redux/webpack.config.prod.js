@@ -13,7 +13,7 @@ module.exports = {
   entry: {
     app: [
       'babel-polyfill',
-      './client/index.js',
+      './src/index.js',
     ],
   },
 
@@ -39,8 +39,8 @@ module.exports = {
 
     // Generate the static site
     new ReactStaticPlugin({
-      routes: './client/routes.js',
-      reduxStore: './client/redux/store.js',
+      routes: './src/routes.js',
+      reduxStore: './src/redux/store.js',
       template: './template.js',
     }),
   ],
