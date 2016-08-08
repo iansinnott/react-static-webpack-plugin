@@ -54,4 +54,4 @@ export function updateForm(update) {
     type: UPDATE_FORM,
     payload: update,
   };
-};
+}
