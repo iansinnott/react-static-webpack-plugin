@@ -15,8 +15,9 @@
   },
   "scripts": {
     "lint": "eslint src example/**/src",
-    "test": "npm run lint && npm run build && npm run test:unit",
+    "test": "npm run lint && npm run flowcheck && npm run build && npm run test:unit",
     "test:unit": "cross-env NODE_ENV=production ava --verbose test.js example/**/test.js",
+    "flowcheck": "flow check",
     "watch": "babel -w -d dist src",
     "start": "npm run watch",
     "clean": "rimraf dist",
@@ -61,6 +62,7 @@
     "eslint-config-airbnb": "^2.1.1",
     "eslint-plugin-react": "^3.13.1",
     "extract-text-webpack-plugin": "~1.0.1",
+    "flow-bin": "^0.30.0",
     "history": "~3.0.0",
     "react": "~15.2.1",
     "react-dom": "~15.2.1",
