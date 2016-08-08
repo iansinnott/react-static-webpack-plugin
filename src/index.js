@@ -24,7 +24,6 @@ import {
   prefix,
   addHash,
 } from './utils.js';
-import { Html } from './Html.js';
 import type {
   OptionsShape,
 } from './constants.js';
@@ -46,7 +45,6 @@ const validateOptions = (options) => {
 function StaticSitePlugin(options: OptionsShape) {
   validateOptions(options);
   this.options = options;
-  this.render = (props) => renderToStaticDocument(Html, props);
 }
 
 /**
