@@ -1,6 +1,6 @@
 {
   "name": "react-static-webpack-plugin",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Build full static sites using React, React Router and Webpack",
   "license": "MIT",
   "repository": "iansinnott/react-static-webpack-plugin",
@@ -14,9 +14,10 @@
     "node": ">=5.0.0"
   },
   "scripts": {
-    "lint": "eslint src example/*.js ./example/src",
-    "test": "npm run lint && npm run build && npm run test:unit",
+    "lint": "eslint src example/**/src",
+    "test": "npm run lint && npm run flowcheck && npm run build && npm run test:unit",
     "test:unit": "cross-env NODE_ENV=production ava --verbose test.js example/**/test.js",
+    "flowcheck": "flow check",
     "watch": "babel -w -d dist src",
     "start": "npm run watch",
     "clean": "rimraf dist",
@@ -61,6 +62,7 @@
     "eslint-config-airbnb": "^2.1.1",
     "eslint-plugin-react": "^3.13.1",
     "extract-text-webpack-plugin": "~1.0.1",
+    "flow-bin": "^0.30.0",
     "history": "~3.0.0",
     "react": "~15.2.1",
     "react-dom": "~15.2.1",
@@ -71,9 +73,9 @@
     "webpack": "~1.13.1"
   },
   "peerDependencies": {
-    "history": "^1.17.0",
-    "react": "^15.0.2",
-    "react-dom": "^15.0.2",
+    "history": "~1.17.0 || ^2.0.0",
+    "react": "^0.14.0 || ^15.0.0",
+    "react-dom": "^0.14.0 || ^15.0.0",
     "react-router": "^2.4.0",
     "webpack": "~1.13.1",
     "extract-text-webpack-plugin": "^1.0.1"

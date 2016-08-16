@@ -6,9 +6,4 @@ machine:
 ## Install example deps as well so that we can run tests there
 dependencies:
   post:
-    - (cd example/basic-with-router; npm install)
-    - (cd example/css-modules; npm install)
-    - (cd example/deep-route-nesting; npm install)
-    - (cd example/extract-css; npm install)
-    - (cd example/with-template; npm install)
-    - (cd example/redux; npm install)
+    - ./install_test_dependencies.sh

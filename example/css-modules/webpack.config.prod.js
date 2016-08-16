@@ -8,7 +8,7 @@ var ReactStaticPlugin = require('../../dist');
 
 module.exports = {
   entry: {
-    app: ['./client/index.js'],
+    app: ['./src/index.js'],
   },
 
   output: {
@@ -20,7 +20,7 @@ module.exports = {
 
   plugins: [
     new ReactStaticPlugin({
-      routes: './client/routes.js',
+      routes: './src/routes.js',
       stylesheet: '/app.css',
       template: './template.js'
     }),

@@ -12,4 +12,3 @@ export type Store = {
   dispatch: Dispatch,
   getState: () => Map,
 };
-

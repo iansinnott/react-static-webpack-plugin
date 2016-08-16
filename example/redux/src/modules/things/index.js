@@ -1,5 +1,5 @@
 /* @flow */
-import { fromJS, OrderedMap, Record } from 'immutable';
+import { fromJS, Record } from 'immutable';
 
 import * as Forms from '../forms';
 import UUID from 'node-uuid';
@@ -8,7 +8,7 @@ import UUID from 'node-uuid';
 const uuid = () => UUID.v4();
 
 const ADD_THING = 'redux-example/things/ADD_THING';
-export const FORM_ID = 'redux-example/things/_form'
+export const FORM_ID = 'redux-example/things/_form';
 
 const Thing = Record({
   id: null,

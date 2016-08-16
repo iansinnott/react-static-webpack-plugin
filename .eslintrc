@@ -46,5 +46,12 @@
     // Allow multiple components in a single file
     "react/no-multi-comp": [0],
 
+    // For this plugin we disable prop types since this is not an actual react
+    // app
+    "react/prop-types": [0],
+
+    // This was simply too anoying for a project that is not a react app
+    "react/jsx-closing-bracket-location": [0],
+
   },
 }

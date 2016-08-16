@@ -24,7 +24,6 @@ import {
   prefix,
   addHash,
 } from './utils.js';
-import { Html } from './Html.js';
 import type {
   OptionsShape,
 } from './constants.js';
@@ -46,7 +45,6 @@ const validateOptions = (options) => {
 function StaticSitePlugin(options: OptionsShape) {
   validateOptions(options);
   this.options = options;
-  this.render = (props) => renderToStaticDocument(Html, props);
 }
 
 /**
@@ -59,7 +57,7 @@ const promiseMatch = (args) => new Promise((resolve, reject) => {
 });
 
 /**
- * compiler seems to be an instance of the Compiler
+ * `compiler` is an instance of the Compiler
  * https://github.com/webpack/webpack/blob/master/lib/Compiler.js#L143
  *
  * NOTE: renderProps.routes is always passed as an array of route elements. For

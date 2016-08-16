@@ -21,7 +21,7 @@ module.exports = {
   entry: {
     app: [
       'webpack-hot-middleware/client?path=' + HMR_HOST,
-      './client/index.js',
+      './src/index.js',
     ],
   },
 
@@ -47,7 +47,7 @@ module.exports = {
       {
         test: /\.js$/,
         loaders: ['babel'],
-        include: path.join(__dirname, 'client'),
+        include: path.join(__dirname, 'src'),
       },
       {
         test: /\.json$/,

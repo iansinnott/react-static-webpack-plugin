@@ -11,5 +11,3 @@ export default function loggerMiddleware(store: Store) {
     return result;
   };
 }
-
-
