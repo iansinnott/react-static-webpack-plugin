@@ -136,7 +136,7 @@ products/zephyr/nomad.html    2.53 kB          [emitted]
 
 ### Full Example
 
-For a full example you can run locally see the [`examples/` directory](examples) or the [React Static Boilerplate][boilerplate].
+For a full examples you can run locally, see the [`example/` directory](example) or the [React Static Boilerplate][boilerplate].
 
 ## Current Limitations
 
