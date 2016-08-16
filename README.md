@@ -303,6 +303,22 @@ npm test
 
 Runs ESLint, Flow type checking and the suite of Wepback tests.
 
+#### Running individual tests
+
+If there is one specific test failing and you want to run it individually you can do so. Make sure you have `ava` installed globally:
+
+```
+npm install -g ava
+```
+
+Then you can run invidual tests by running a command similar to this. For example, to test only the Redux tests you can run:
+
+```
+NODE_ENV=production DEBUG=react-static-webpack-plugin* ava --verbose  ./example/redux/test.js
+```
+
+The `DEBUG` env variable tells the plugin to be very verbose in its logging output.
+
 [boilerplate]: https://github.com/iansinnott/react-static-boilerplate
 
 ## License
