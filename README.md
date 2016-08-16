@@ -289,11 +289,19 @@ npm link react-static-webpack-plugin
 
 #### To `test`
 
+First, make sure you've installed all the test dependencies. This means installing all `node_modules` within the `example/` directory. You can do this with the provided script.
+
+```
+./install_test_dependencies.sh
+```
+
+Now you can run the tests:
+
 ```
 npm test
 ```
 
-Runs the suite of Wepback tests.
+Runs ESLint, Flow type checking and the suite of Wepback tests.
 
 [boilerplate]: https://github.com/iansinnott/react-static-boilerplate
 
