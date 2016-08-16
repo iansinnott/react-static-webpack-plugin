@@ -12,14 +12,21 @@
     // Indent 2 spaces always
     "indent": [2, 2],
 
+    // Else returns are fine
+    "no-else-return": [0],
+
+    // Sometimes it's useful to shadow args
     "no-shadow": [0],
 
     "array-bracket-spacing": [0],
 
+    // When things don't get reassigned let's be explicit about it
     "prefer-const": [0],
 
+    // Don't worry about unnamed anonymous functions
     "func-names": [0],
 
+    // Allow using function declarations before they are defined
     "no-use-before-define": [2, "nofunc"],
 
     // Console can be useful and can also be stripped about by webpack in prod
