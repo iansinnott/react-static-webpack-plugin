@@ -36,7 +36,7 @@ export class How extends React.Component {
 }
 
 class Home extends React.Component {
-  componentWillMount() {
+  componentDidMount() {
     this.props.dispatch(initialize());
   }
 
