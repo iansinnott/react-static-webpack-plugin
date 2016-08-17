@@ -44,6 +44,7 @@ const AppIndex = props => (
 const About = props => (
   <h3>About page bro</h3>
 );
+
 const Products = props => (
   <h3>Product are here</h3>
 );
@@ -53,6 +54,10 @@ const Product = props => (
     <h3>Product are here</h3>
     <p>This is the product description</p>
   </div>
+);
+
+const NotFound = props => (
+  <h3>Nothing to see here</h3>
 );
 
 const Contact = props => (
@@ -65,56 +70,55 @@ const Contact = props => (
   </form>
 );
 
-const routes1 = (
-  <Route path='/' component={Layout}>
-    <IndexRoute component={AppIndex} />
-    <Route path='about' component={About} />
-    <Route path='products' component={Products} />
-    <Route path='contact' component={Contact} />
-  </Route>
-);
+test('getAssetKey', t => {
+  t.is(getAssetKey('/'), 'index.html');
+  t.is(getAssetKey('/about'), 'about.html');
+  t.is(getAssetKey('/about/team'), 'about/team.html');
+});
 
-const routes2 = (
-  <Route path='/' component={Layout}>
-    <Route path='about' component={About} />
-    <Route path='products' component={Products}>
-      <Route path='zephyr' component={Product} />
-      <Route path='sparkles' component={Product} />
-      <Route path='jarvis' component={Product} />
+test('Ignores index routes when generating paths', t => {
+  const routes = (
+    <Route path='/' component={Layout}>
+      <IndexRoute component={AppIndex} />
+      <Route path='about' component={About} />
+      <Route path='products' component={Products} />
+      <Route path='contact' component={Contact} />
     </Route>
-    <Route path='contact' component={Contact} />
-  </Route>
-);
+  );
 
-const routes3 = (
-  <Route path='/' component={Layout}>
-    <Route path='about' component={About} />
-    <Route path='products' component={Products}>
-      <Route path='zephyr' component={Product}>
-        <Route path='nomad' component={Contact} />
-      </Route>
-    </Route>
-  </Route>
-);
+  const paths = getAllPaths(routes);
 
-const routes4 = (
-  <Route path='/' component={Layout}>
-    <IndexRedirect to='about' />
-    <Redirect from='abt' to='about' />
-    <Route path='about' component={About} />
-    <Route path='products' component={Products} />
-    <Route path='contact' component={Contact} />
-  </Route>
-);
-
-test('Can get all paths from routes using getAllPaths', t => {
-  t.deepEqual(getAllPaths(routes1), [
+  t.deepEqual(paths, [
     '/',
     '/about',
     '/products',
     '/contact',
   ]);
-  t.deepEqual(getAllPaths(routes2), [
+
+  t.deepEqual(paths.map(getAssetKey), [
+    'index.html',
+    'about.html',
+    'products.html',
+    'contact.html',
+  ]);
+});
+
+test('Can get paths from nested routes', t => {
+  const routes = (
+    <Route path='/' component={Layout}>
+      <Route path='about' component={About} />
+      <Route path='products' component={Products}>
+        <Route path='zephyr' component={Product} />
+        <Route path='sparkles' component={Product} />
+        <Route path='jarvis' component={Product} />
+      </Route>
+      <Route path='contact' component={Contact} />
+    </Route>
+  );
+
+  const paths = getAllPaths(routes);
+
+  t.deepEqual(paths, [
     '/',
     '/about',
     '/products',
@@ -123,7 +127,33 @@ test('Can get all paths from routes using getAllPaths', t => {
     '/products/jarvis',
     '/contact',
   ]);
-  t.deepEqual(getAllPaths(routes3), [
+
+  t.deepEqual(paths.map(getAssetKey), [
+    'index.html',
+    'about.html',
+    'products.html',
+    'products/zephyr.html',
+    'products/sparkles.html',
+    'products/jarvis.html',
+    'contact.html',
+  ]);
+});
+
+test('Can get deeply nested route paths', t => {
+  const routes = (
+    <Route path='/' component={Layout}>
+      <Route path='about' component={About} />
+      <Route path='products' component={Products}>
+        <Route path='zephyr' component={Product}>
+          <Route path='nomad' component={Contact} />
+        </Route>
+      </Route>
+    </Route>
+  );
+
+  const paths = getAllPaths(routes);
+
+  t.deepEqual(paths, [
     '/',
     '/about',
     '/products',
@@ -131,17 +161,71 @@ test('Can get all paths from routes using getAllPaths', t => {
     '/products/zephyr/nomad',
   ]);
 
-  // Testing IndexRedirect
-  t.deepEqual(getAllPaths(routes4), [
+  t.deepEqual(paths.map(getAssetKey), [
+    'index.html',
+    'about.html',
+    'products.html',
+    'products/zephyr.html',
+    'products/zephyr/nomad.html',
+  ]);
+});
+
+test('Ignores IndexRedirect', t => {
+  const routes = (
+    <Route path='/' component={Layout}>
+      <IndexRedirect to='about' />
+      <Redirect from='abt' to='about' />
+      <Route path='about' component={About} />
+      <Route path='products' component={Products} />
+      <Route path='contact' component={Contact} />
+    </Route>
+  );
+
+  const paths = getAllPaths(routes);
+
+  t.deepEqual(paths, [
     '/', // This is not a real route, but it will be detected anyway b/c of Layout
     '/about',
     '/products',
     '/contact',
   ]);
+
+  t.deepEqual(paths.map(getAssetKey), [
+    'index.html',
+    'about.html',
+    'products.html',
+    'contact.html',
+  ]);
 });
 
-test('getAssetKey', t => {
-  t.is(getAssetKey('/'), 'index.html');
-  t.is(getAssetKey('/about'), 'about.html');
-  t.is(getAssetKey('/about/team'), 'about/team.html');
+
+test('Can utilize not found route', t => {
+  const routes = (
+    <Route path='/' component={Layout}>
+      <IndexRoute title='Reactathon' component={Products} />
+      <Route path='about' title='App - About' component={Product} />
+      <Route path='code-of-conduct' title='App - Code of Conduct' component={About} />
+      <Route path='sponsors' title='App - Sponsors' component={Contact} />
+      <Route path='*' title='404: Not Found' component={NotFound} />
+    </Route>
+  );
+
+  const paths = getAllPaths(routes);
+
+  t.deepEqual(paths, [
+    '/',
+    '/about',
+    '/code-of-conduct',
+    '/sponsors',
+    '/*',
+  ]);
+
+  t.deepEqual(paths.map(getAssetKey), [
+    'index.html',
+    'about.html',
+    'code-of-conduct.html',
+    'sponsors.html',
+    '404.html',
+  ]);
 });
+
