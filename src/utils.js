@@ -1,5 +1,4 @@
 /* @flow */
-import isUndefined from 'lodash/isUndefined';
 import flattenDeep from 'lodash/flattenDeep';
 import isString from 'lodash/isString';
 import React from 'react';
@@ -163,7 +162,7 @@ export const compileAsset: CompileAsset = (opts) => {
 };
 
 type RouteShape = {
-  component: any,
+  component?: any,
   props: Object,
   childRoutes?: Object[],
   path?: string,
