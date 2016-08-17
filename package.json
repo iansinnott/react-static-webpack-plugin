@@ -49,7 +49,7 @@
     "lodash": "^4.11.1"
   },
   "devDependencies": {
-    "ava": "^0.15.2",
+    "ava": "^0.16.0",
     "babel": "^6.3.26",
     "babel-cli": "^6.3.17",
     "babel-eslint": "^4.1.6",
