@@ -243,7 +243,11 @@ export const getAssetKey = (location: string): string => {
     filename = basename + '.html';
   }
 
-  return dirname ? (dirname + path.sep + filename) : filename;
+  const result = dirname ? (dirname + path.sep + filename) : filename;
+
+  debug(`Getting asset key: "${location}" -> "${result}"`);
+
+  return result;
 };
 
 /**
