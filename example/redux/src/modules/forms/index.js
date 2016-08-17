@@ -47,6 +47,16 @@ export function registerForm(initialForm) {
 }
 
 /**
+ * type formId: string
+ */
+export function unregisterForm(formId) {
+  return {
+    type: REGISTER_FORM,
+    payload: formId,
+  };
+}
+
+/**
  * type update = { keypath: string[], value: string | number | boolean }
  */
 export function updateForm(update) {
