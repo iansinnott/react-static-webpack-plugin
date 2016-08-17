@@ -23,14 +23,6 @@ let extraneousAssets: string[] = [];
 export const getExtraneousAssets = () => extraneousAssets;
 
 /**
- * This is not a very sophisticated checking method. Assuming we already know
- * this is either a Route or an IndexRoute under what cases would this break?
- */
-const hasNoComponent = route => {
-  return isUndefined(route.props.path) || isUndefined(route.props.component);
-};
-
-/**
  * Adde a namespace/prefix to a filename so as to avoid naming conflicts with
  * things the user has created.
  */
@@ -202,9 +194,9 @@ export const getNestedPaths: GetNestedPaths = (route, prefix = '') => {
 
   if (Array.isArray(route)) return route.map(x => getNestedPaths(x, prefix));
 
-  // Some routes such as redirects or index routes do not have a component. Skip
+  // Some routes such as redirects or index routes do not have a path. Skip
   // them.
-  if (hasNoComponent(route)) return [];
+  if (!route.props.path) return [];
 
   const path = prefix + route.props.path;
   const nextPrefix = path === '/' ? path : path + '/';
