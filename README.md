@@ -36,7 +36,7 @@ module.exports = {
 
   plugins: [
     new ReactStaticPlugin({
-      routes: './client/index.js', // Path to routes file
+      routes: './client/index.js',  // Path to routes file
       template: './template.js',    // Path to JSX template file
     }),
   ],
@@ -256,6 +256,7 @@ The path to your Redux store. This option allows you to pass a store to react-st
 - [x] Redux support
 - [ ] Support for dynamic routes + data (i.e. `<Route path='post/:id' />`)
 - [ ] Custom 404 page filename option
+- [ ] Passing all props from `<Route>` components and React Router to your template component as props (See #12)
 
 ## Development
 
