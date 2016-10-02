@@ -33,7 +33,7 @@ const renderToStaticDocument = (Component, props) => {
 };
 
 const validateOptions = (options) => {
-  if (!options.routes) {
+  if (!options || !options.routes) {
     throw new Error('No routes param provided');
   }
 
