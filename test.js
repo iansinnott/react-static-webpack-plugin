@@ -103,6 +103,55 @@ test('Ignores index routes when generating paths', t => {
   ]);
 });
 
+test('Can get paths from plain routes', t => {
+  const routes = {
+    path: '/',
+    component: Layout,
+    childRoutes: [{
+      path: 'about',
+      component: About,
+    }, {
+      path: 'products',
+      component: Products,
+      childRoutes: [{
+        path: 'zephyr',
+        component: Product
+      }, {
+        path: 'sparkles',
+        component: Product
+      }, {
+        path: 'jarvis',
+        component: Product
+      }]
+    }, {
+      path: 'contact',
+      component: Contact
+    }]
+  };
+
+  const paths = getAllPaths(routes);
+
+  t.deepEqual(paths, [
+    '/',
+    '/about',
+    '/products',
+    '/products/zephyr',
+    '/products/sparkles',
+    '/products/jarvis',
+    '/contact',
+  ]);
+
+  t.deepEqual(paths.map(getAssetKey), [
+    'index.html',
+    'about.html',
+    'products.html',
+    'products/zephyr.html',
+    'products/sparkles.html',
+    'products/jarvis.html',
+    'contact.html',
+  ]);
+});
+
 test('Can get paths from nested routes', t => {
   const routes = (
     <Route path='/' component={Layout}>
