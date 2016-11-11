@@ -17,7 +17,6 @@ import {
   getAllPaths,
   getExtraneousAssets,
   compileAsset,
-  isRoute,
   renderSingleComponent,
   getAssetKey,
   debug,
@@ -33,8 +32,11 @@ const renderToStaticDocument = (Component, props) => {
 };
 
 const validateOptions = (options) => {
-  if (!options || !options.routes) {
-    throw new Error('No routes param provided');
+  if (!options) {
+    throw new Error('No options provided');
+  }
+  if (!options.routes && !options.component) {
+    throw new Error('No component or routes param provided');
   }
 
   if (!options.template) {
@@ -87,12 +89,12 @@ StaticSitePlugin.prototype.apply = function(compiler) {
    * plugin is excellent for.
    */
   compiler.plugin('make', (compilation, cb) => {
-    const { routes, template, reduxStore } = this.options;
+    const { component, routes, template, reduxStore } = this.options;
 
     // Compile routes and template
     const promises = [
       compileAsset({
-        filepath: routes,
+        filepath: routes || component,
         outputFilename: prefix('routes.js'),
         compilation,
         context: compiler.context,
@@ -166,7 +168,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       let [routes, template, store] = assets;
 
       if (!routes) {
-        throw new Error(`Entry file compiled with empty source: ${this.options.routes}`);
+        throw new Error(`Entry file compiled with empty source: ${this.options.routes || this.options.component}`);
       }
 
       routes = routes.routes || routes.default || routes;
@@ -187,8 +189,8 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       this.render = (props) => renderToStaticDocument(template, props);
 
       // Support rendering a single component without the need for react router.
-      if (!isRoute(routes)) {
-        debug('Entrypoint specified with `routes` option did not return a Route component. Rendering as individual component instead.');
+      if (!this.options.routes && this.options.component) {
+        debug('Entrypoint specified with `component` option. Rendering individual component.');
         compilation.assets['index.html'] = renderSingleComponent(routes, addHash(this.options, compilation.hash), this.render, store);
         return cb();
       }

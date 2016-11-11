@@ -29,7 +29,7 @@ module.exports = {
       compressor: { warnings: false },
     }),
     new ReactStaticPlugin({
-      routes: './src/components/App.js',
+      component: './src/components/App.js',
       template: './template.js',
       stylesheet: '/app.css',
     }),

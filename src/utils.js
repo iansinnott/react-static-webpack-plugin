@@ -161,9 +161,10 @@ export const compileAsset: CompileAsset = (opts) => {
   });
 };
 
+// can be an React Element or a POJO
 type RouteShape = {
   component?: any,
-  props: Object,
+  props?: Object,
   childRoutes?: Object[],
   path?: string,
 }
@@ -187,19 +188,21 @@ type RouteShape = {
  *
  * getAllPaths(routes); => ['/', '/about]
  */
-type GetNestedPaths = (a: RouteShape | RouteShape[], b: ?string) => any[];
+type GetNestedPaths = (a?: RouteShape | RouteShape[], b?: string) => any[];
 export const getNestedPaths: GetNestedPaths = (route, prefix = '') => {
   if (!route) return [];
 
   if (Array.isArray(route)) return route.map(x => getNestedPaths(x, prefix));
 
+  let path = route.props && route.props.path || route.path;
   // Some routes such as redirects or index routes do not have a path. Skip
   // them.
-  if (!route.props.path) return [];
+  if (!path) return [];
 
-  const path = prefix + route.props.path;
+  path = prefix + path;
   const nextPrefix = path === '/' ? path : path + '/';
-  return [path, ...getNestedPaths(route.props.children, nextPrefix)];
+  const childRoutes = route.props && route.props.children || route.childRoutes;
+  return [path, ...getNestedPaths(childRoutes, nextPrefix)];
 };
 
 export const getAllPaths = (routes: RouteShape | RouteShape[]): string[] => {
@@ -303,6 +306,7 @@ export const renderSingleComponent: RenderSingleComponent = (imported, options, 
   }
 
   try {
+    debug('Rendering single component.');
     body = renderToString(component);
   } catch (err) {
     throw new Error(`Invalid single component. Make sure you added your component as the default export from ${options.routes}`);
