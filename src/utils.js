@@ -226,8 +226,8 @@ export const getAssetKey = (location: string): string => {
   const dirname = path.dirname(location).slice(1); // See NOTE above
   let filename;
 
-  if (!basename || location.slice(-1) === '/') {
-    filename = 'index.html';
+  if (location.slice(-1) === '/') {
+    filename = !basename ? 'index.html' : basename + '/index.html';
   } else if (basename === '*') {
     filename = '404.html';
   } else {
