@@ -74,6 +74,7 @@ test('getAssetKey', t => {
   t.is(getAssetKey('/'), 'index.html');
   t.is(getAssetKey('/about'), 'about.html');
   t.is(getAssetKey('/about/team'), 'about/team.html');
+  t.is(getAssetKey('/about/team/bios/'), 'about/team/bios/index.html');
 });
 
 test('Ignores index routes when generating paths', t => {
@@ -277,4 +278,3 @@ test('Can utilize not found route', t => {
     '404.html',
   ]);
 });
-
