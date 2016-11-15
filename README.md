@@ -138,6 +138,26 @@ products/zephyr/nomad.html    2.53 kB          [emitted]
 
 For a full examples you can run locally, see the [`example/` directory](example) or the [React Static Boilerplate][boilerplate].
 
+## Generating `index.html` for every route
+
+By default this plugin will generate a named HTML file for leaf routes, i.e. any route without child routes. Example:
+
+```js
+<Route path='about' component={About} />
+// -> 'about.html'
+```
+
+However you can also chose to opt in to generating an `index.html` file for every route by simply adding a trailing `/` to your `path` prop. Example:
+
+```js
+// Notice the trailing slash below
+//                ↓
+<Route path='about/' component={About} />
+// -> 'about/index.html'
+```
+
+See the [deep route nesting](https://github.com/iansinnott/react-static-webpack-plugin/blob/master/example/deep-route-nesting/src/routes.js) example for a complete example of generating `index.html` files.
+
 ## Current Limitations
 
 This plugin does not currently support all the functionality of react router.
