@@ -22,7 +22,7 @@ export const routes = (
         </Route>
       </Route>
     </Route>
-    <Route path='about' title='App - About' component={About} />
+    <Route path='about/' title='App - About' component={About} />
     <Route path='*' title='404: Not Found' component={NotFound} />
   </Route>
 );
