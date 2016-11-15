@@ -10,9 +10,6 @@
     "email": "ian@iansinnott.com",
     "url": "iansinnott.com"
   },
-  "engines": {
-    "node": ">=5.0.0"
-  },
   "scripts": {
     "lint": "eslint src example/**/src",
     "test": "npm run lint && npm run flowcheck && npm run build && npm run test:unit",
