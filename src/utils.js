@@ -167,7 +167,7 @@ type RouteShape = {
   props?: Object,
   childRoutes?: Object[],
   path?: string,
-}
+};
 
 /**
  * NOTE: We could likely use createRoutes to our advantage here. It may simplify

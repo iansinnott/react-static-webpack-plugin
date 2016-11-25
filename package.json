@@ -11,7 +11,8 @@
     "url": "iansinnott.com"
   },
   "scripts": {
-    "lint": "eslint src example/**/src",
+    "lint": "eslint src",
+    "lint:example": "eslint example/**/src",
     "test": "npm run lint && npm run flowcheck && npm run build && npm run test:unit",
     "test:unit": "cross-env NODE_ENV=production ava --verbose test.js example/**/test.js",
     "flowcheck": "flow check",
@@ -56,7 +57,8 @@
     "babel-register": "^6.8.0",
     "cross-env": "^3.1.3",
     "eslint": "^3.10.2",
-    "eslint-config-airbnb": "^13.0.0",
+    "eslint-config-zen": "^2.0.0",
+    "eslint-plugin-flowtype": "^2.25.0",
     "eslint-plugin-react": "^6.7.1",
     "extract-text-webpack-plugin": "^1.0.1",
     "flow-bin": "^0.36.0",
@@ -70,11 +72,11 @@
     "webpack": "^1.13.1"
   },
   "peerDependencies": {
+    "extract-text-webpack-plugin": "^1.0.1 || ^2.0.0",
     "history": "~1.17.0 || ^2.0.0",
     "react": "^0.14.0 || ^15.0.0",
     "react-dom": "^0.14.0 || ^15.0.0",
     "react-router": "^2.4.0",
-    "webpack": "^1.13.1 || ^2.0.0",
-    "extract-text-webpack-plugin": "^1.0.1 || ^2.0.0"
+    "webpack": "^1.13.1 || ^2.0.0"
   }
 }

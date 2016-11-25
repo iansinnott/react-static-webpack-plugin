@@ -1,3 +1,4 @@
+/* @flow */
 export type OptionsShape = {
   routes: string,
   template?: string,
