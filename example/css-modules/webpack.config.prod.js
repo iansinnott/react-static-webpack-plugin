@@ -7,6 +7,9 @@ var rupture = require('rupture');
 var ReactStaticPlugin = require('../../dist');
 
 module.exports = {
+
+  context: __dirname,
+
   entry: {
     app: ['./src/index.js'],
   },

@@ -17,6 +17,8 @@ var HMR_HOST = DEV_HOST + '__webpack_hmr';
 module.exports = {
   devtool: 'inline-source-map',
 
+  context: __dirname,
+
   entry: {
     app: [
       'webpack-hot-middleware/client?path=' + HMR_HOST,
