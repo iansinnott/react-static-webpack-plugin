@@ -53,10 +53,9 @@
     "file-loader": "^0.8.5",
     "history": "^2.1.1",
     "normalize.css": "^4.1.1",
-    "react": "^15.1.0",
-    "react-dom": "^15.1.0",
-    "react-router": "^2.4.1",
-    "react-static-webpack-plugin": "^0.5.0",
+    "react": "^15.4.1",
+    "react-dom": "^15.4.1",
+    "react-router": "^3.0.0",
     "react-transform-catch-errors": "^1.0.2",
     "react-transform-hmr": "^1.0.4",
     "redbox-react": "^1.2.5",
@@ -69,8 +68,5 @@
     "webpack": "^1.13.1",
     "webpack-dev-middleware": "^1.6.1",
     "webpack-hot-middleware": "^2.10.0"
-  },
-  "devDependencies": {
-    "react-dom": "~15.2.1"
   }
 }

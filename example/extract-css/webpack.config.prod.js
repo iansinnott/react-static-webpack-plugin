@@ -7,6 +7,8 @@ var ReactStaticPlugin = require('../../dist');
 module.exports = {
   devtool: 'source-map',
 
+  context: __dirname,
+
   entry: {
     app: ['./src/index.js'],
   },

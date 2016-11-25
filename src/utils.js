@@ -49,7 +49,7 @@ export const compileAsset: CompileAsset = (opts) => {
   };
   let rawAssets = {};
 
-  debug(`Compiling "${filepath}"`);
+  debug(`Compiling "${path.resolve(context, filepath)}"`);
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
   childCompiler.apply(new SingleEntryPlugin(context, filepath));
@@ -167,7 +167,7 @@ type RouteShape = {
   props?: Object,
   childRoutes?: Object[],
   path?: string,
-}
+};
 
 /**
  * NOTE: We could likely use createRoutes to our advantage here. It may simplify
