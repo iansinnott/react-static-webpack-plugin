@@ -8,6 +8,7 @@ import Promise from 'bluebird';
 import vm from 'vm';
 import webpack from 'webpack';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
+import { jsdom } from 'jsdom';
 
 import type { OptionsShape } from './constants.js';
 
@@ -153,10 +154,27 @@ export const compileAsset: CompileAsset = (opts) => {
 
     debug(`${filepath} compiled. Processing source...`);
 
-    return vm.runInNewContext(asset.source(), { ...global, crypto: require('crypto') }); // See NOTE
+    const fakeDocument = jsdom('');
+    const fakeWindow = fakeDocument.defaultView;
+    fakeWindow.crypto = require('crypto');
+
+    const jsWindow = jsdom().defaultView;
+    jsWindow.window = jsWindow;
+    const sandbox = {
+      ...global,
+      window: jsWindow,
+      crypto: require('crypto'),  // See NOTE
+    };
+    sandbox.global = sandbox;
+    vm.createContext(sandbox);
+
+    return vm.runInContext(asset.source(), sandbox, {
+      filename: filepath,
+      displayErrors: true,
+    });
   })
   .catch((err) => {
-    debug(`${filepath} failed to process. Rejecting...`);
+    debug(`${filepath} failed to process. Rejecting...`, err);
     return Promise.reject(err);
   });
 };
