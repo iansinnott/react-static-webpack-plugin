@@ -153,7 +153,13 @@ export const compileAsset: CompileAsset = (opts) => {
 
     debug(`${filepath} compiled. Processing source...`);
 
-    return vm.runInNewContext(asset.source(), { ...global, crypto: require('crypto') }); // See NOTE
+    const sandbox = { ...global, crypto: require('crypto') }; // See NOTE
+    // make sure circular reference stay true
+    sandbox.global = sandbox;
+    return vm.runInNewContext(asset.source(), sandbox, {
+      filename: filepath,
+      displayErrors: true
+    });
   })
   .catch((err) => {
     debug(`${filepath} failed to process. Rejecting...`);
