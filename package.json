@@ -1,6 +1,6 @@
 {
   "name": "react-static-webpack-plugin",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Build full static sites using React, React Router and Webpack",
   "license": "MIT",
   "repository": "iansinnott/react-static-webpack-plugin",
