@@ -158,11 +158,11 @@ export const compileAsset: CompileAsset = (opts) => {
     const fakeWindow = fakeDocument.defaultView;
     fakeWindow.crypto = require('crypto');
 
-    const jsWindow = jsdom().defaultView;
-    jsWindow.window = jsWindow;
     const sandbox = {
       ...global,
-      window: jsWindow,
+      ...fakeWindow,
+      window: fakeWindow,
+      document: fakeDocument,
       crypto: require('crypto'),  // See NOTE
     };
     sandbox.global = sandbox;
