@@ -33,6 +33,8 @@ test('Compiles all files as expected', async t => {
 });
 
 test('Protected files were compiled with empty body', async t => {
+  const stats = await compileWebpack(options);
+
   const publicContents = [
     '/products/first.html',
     '/products/second.html',
