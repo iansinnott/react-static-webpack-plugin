@@ -22,6 +22,7 @@ import {
   debug,
   prefix,
   addHash,
+  log,
 } from './utils.js';
 import type {
   OptionsShape,
@@ -221,13 +222,13 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 
           if (redirectLocation) {
             debug(`Redirect encountered. Ignoring route: "${location}"`, redirectLocation);
-            console.log(`${logPrefix} Redirect encountered: ${location} -> ${redirectLocation.pathname}. ${emptyBodyWarning}`);
+            log(`${logPrefix} Redirect encountered: ${location} -> ${redirectLocation.pathname}. ${emptyBodyWarning}`);
           } else if (error) {
             debug('Error encountered matching route', location, error, redirectLocation, renderProps);
-            console.log(`${logPrefix} Error encountered rendering route "${location}". ${emptyBodyWarning}`);
+            log(`${logPrefix} Error encountered rendering route "${location}". ${emptyBodyWarning}`);
           } else if (!renderProps) {
             debug('No renderProps found matching route', location, error, redirectLocation, renderProps);
-            console.log(`${logPrefix} No renderProps found matching route "${location}". ${emptyBodyWarning}`);
+            log(`${logPrefix} No renderProps found matching route "${location}". ${emptyBodyWarning}`);
           } else if (store) {
             debug(`Redux store provided. Rendering "${location}" within Provider.`);
             component = (

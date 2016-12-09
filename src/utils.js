@@ -330,6 +330,16 @@ export const renderSingleComponent: RenderSingleComponent = (imported, options, 
   };
 };
 
+/**
+ * Only log in prod and dev. I.e. do not log on CI. The reason for logging
+ * during prod is that we usually only build our bundles with
+ * NODE_ENV=production prefixing the build command.
+ */
+export const log = (...args: Array<string>): void => {
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'production') {
+    console.log(...args);
+  }
+};
 
 /**
  * Add hash to all options that includes '[hash]' ex: bundle.[hash].js
