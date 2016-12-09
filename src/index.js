@@ -25,6 +25,7 @@ import {
 } from './utils.js';
 import type {
   OptionsShape,
+  MatchShape,
 } from './constants.js';
 
 const renderToStaticDocument = (Component, props) => {
@@ -53,8 +54,8 @@ function StaticSitePlugin(options: OptionsShape) {
  * The same as the RR match function, but promisified.
  */
 const promiseMatch = (args) => new Promise((resolve, reject) => {
-  match(args, (err, redirectLocation, renderProps) => {
-    resolve({ err, redirectLocation, renderProps });
+  match(args, (error, redirectLocation, renderProps) => {
+    resolve({ error, redirectLocation, renderProps });
   }, reject);
 });
 
@@ -212,16 +213,22 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 
       Promise.all(paths.map(location => {
         return promiseMatch({ routes, location })
-        .then(({ err, redirectLocation, renderProps }) => {
-          if (err || !renderProps) {
-            debug('Error matching route', location, err, renderProps);
-            return Promise.reject(new Error(`Error matching route: ${location}`));
-          }
-
-          let component = <RouterContext {...renderProps} />;
+        .then(({ error, redirectLocation, renderProps }: MatchShape): void => {
           let { options } = this;
+          const logPrefix = 'react-static-webpack-plugin:';
+          const emptyBodyWarning = 'Route will be rendered with an empty body.';
+          let component;
 
-          if (store) {
+          if (redirectLocation) {
+            debug(`Redirect encountered. Ignoring route: "${location}"`, redirectLocation);
+            console.log(`${logPrefix} Redirect encountered: ${location} -> ${redirectLocation.pathname}. ${emptyBodyWarning}`);
+          } else if (error) {
+            debug('Error encountered matching route', location, error, redirectLocation, renderProps);
+            console.log(`${logPrefix} Error encountered rendering route "${location}". ${emptyBodyWarning}`);
+          } else if (!renderProps) {
+            debug('No renderProps found matching route', location, error, redirectLocation, renderProps);
+            console.log(`${logPrefix} No renderProps found matching route "${location}". ${emptyBodyWarning}`);
+          } else if (store) {
             debug(`Redux store provided. Rendering "${location}" within Provider.`);
             component = (
               <Provider store={store}>
@@ -231,16 +238,25 @@ StaticSitePlugin.prototype.apply = function(compiler) {
 
             // Make sure initialState will be provided to the template
             options = { ...options, initialState: store.getState() };
+          } else {
+            component = <RouterContext {...renderProps} />; // Successful render
           }
 
-          const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-          const body = renderToString(component);
+          let title = '';
+
+          if (renderProps) {
+            const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
+            title = route.title;
+          }
+
+          const body = component ? renderToString(component) : '';
           const assetKey = getAssetKey(location);
           const doc = this.render({
             ...addHash(options, compilation.hash),
-            title: route.title,
+            title,
             body,
           });
+
           compilation.assets[assetKey] = {
             source() { return doc; },
             size() { return doc.length; },
