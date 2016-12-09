@@ -249,12 +249,21 @@ StaticSitePlugin.prototype.apply = function(compiler) {
             title = route.title;
           }
 
+          const reactStaticCompilation = {
+            error,
+            redirectLocation,
+            renderProps,
+            location,
+            options, // NOTE: Options is duplciated as a root level prop below, but removing that would mean a major version bump
+          };
+
           const body = component ? renderToString(component) : '';
           const assetKey = getAssetKey(location);
           const doc = this.render({
             ...addHash(options, compilation.hash),
             title,
             body,
+            reactStaticCompilation,
           });
 
           compilation.assets[assetKey] = {
