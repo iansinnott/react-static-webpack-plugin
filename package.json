@@ -74,7 +74,7 @@
   },
   "peerDependencies": {
     "extract-text-webpack-plugin": "^1.0.1 || ^2.0.0",
-    "history": "~1.17.0 || ^2.0.0",
+    "history": "~4.5.0",
     "react": "^0.14.0 || ^15.0.0",
     "react-dom": "^0.14.0 || ^15.0.0",
     "react-router": "^2.4.0",
