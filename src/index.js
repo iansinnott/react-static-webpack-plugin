@@ -40,9 +40,11 @@ const validateOptions = (options) => {
   if (!options.routes && !options.component) {
     throw new Error('No component or routes param provided');
   }
-
   if (!options.template) {
     throw new Error('No template param provided');
+  }
+  if (options.renderToStaticMarkup && typeof(options.renderToStaticMarkup) !== 'boolean') {
+    throw new Error('Optional param renderToStaticMarkup must have a value of either true or false');
   }
 };
 
@@ -258,7 +260,8 @@ StaticSitePlugin.prototype.apply = function(compiler) {
             options, // NOTE: Options is duplciated as a root level prop below, but removing that would mean a major version bump
           };
 
-          const body = component ? renderToString(component) : '';
+          const renderMethod = this.options.renderToStaticMarkup === true ? renderToStaticMarkup(component) : renderToString(component);
+          const body = component ? renderMethod : '';
           const assetKey = getAssetKey(location);
           const doc = this.render({
             ...addHash(options, compilation.hash),

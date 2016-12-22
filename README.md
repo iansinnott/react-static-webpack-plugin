@@ -266,6 +266,14 @@ The `props` object will have everything you passed in the options object to the 
 
 The path to your Redux store. This option allows you to pass a store to react-static-webpack-plugin. This allows for Redux support. The store you pass in will be used in tandem with the react-redux `<Provider store={store}>` component to render your Redux app to a static site.
 
+#### `renderToStaticMarkup`
+
+**Type:** `boolean`
+
+**Default:** `false`
+
+Set to `true` to use render output code without extra DOM attributes such as `data-reactid`, that React uses internally. This is useful if you want to use the React Static Webpack Plugin as a simple static page generator, as stripping away the extra attributes can save lots of bytes.
+
 **Examples coming soon**
 
 ## Roadmap

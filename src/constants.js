@@ -3,6 +3,7 @@ export type OptionsShape = {
   routes: string,
   template?: string,
   reduxStore?: string,
+  renderToStaticMarkup?: boolean,
   bundle?: string,
   stylesheet?: string,
   favicon?: string,
