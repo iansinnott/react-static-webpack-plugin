@@ -260,8 +260,10 @@ StaticSitePlugin.prototype.apply = function(compiler) {
             options, // NOTE: Options is duplciated as a root level prop below, but removing that would mean a major version bump
           };
 
-          const renderMethod = this.options.renderToStaticMarkup === true ? renderToStaticMarkup(component) : renderToString(component);
-          const body = component ? renderMethod : '';
+          const renderMethod = this.options.renderToStaticMarkup === true
+            ? renderToStaticMarkup
+            : renderToString;
+          const body = component ? renderMethod(component) : '';
           const assetKey = getAssetKey(location);
           const doc = this.render({
             ...addHash(options, compilation.hash),
