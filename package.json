@@ -23,6 +23,7 @@
     "build:compile": "babel -d dist src",
     "bump:patch": "npm version patch -m \"v%s\"",
     "bump:minor": "npm version minor -m \"v%s\"",
+    "bump:major": "npm version major -m \"v%s\"",
     "bump": "npm run bump:patch",
     "preversion": "npm test",
     "postversion": "git push && git push --tags",
