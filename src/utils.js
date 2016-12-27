@@ -8,6 +8,7 @@ import Promise from 'bluebird';
 import vm from 'vm';
 import webpack from 'webpack';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
+import { jsdom } from 'jsdom';
 
 import type { OptionsShape } from './constants.js';
 
@@ -153,10 +154,29 @@ export const compileAsset: CompileAsset = (opts) => {
 
     debug(`${filepath} compiled. Processing source...`);
 
-    const sandbox = { ...global, crypto: require('crypto') }; // See NOTE
-    // make sure circular reference stay true
-    sandbox.global = sandbox;
-    return vm.runInNewContext(asset.source(), sandbox, {
+    // Instantiate browser sandbox
+    const doc = jsdom('<html><body></body></html>');
+    const win = doc.defaultView;
+
+    // Shallow clone. Not yet sure why this is necessary, but without this the
+    // context that is passed to the vm does NOT end up getting everything we
+    // want. It doesn't get navigator or location for example. Doing this manual
+    // reference assignment seems to fix the issue for now.
+    Object.keys(win).forEach((k) => {
+      win[k] = win[k];
+    });
+
+    // Ensure object references are preserved
+    win.document = doc;
+    win.window = win;
+
+    // Crypto is not implemented in jsdom, as per https://github.com/tmpvar/jsdom/issues/1612
+    win.crypto = require('crypto');
+
+    // Bind console to node console
+    win.console = console;
+
+    return vm.runInNewContext(asset.source(), win, {
       filename: filepath,
       displayErrors: true
     });

@@ -1,6 +1,6 @@
 {
   "name": "react-static-webpack-plugin",
-  "version": "1.6.0",
+  "version": "2.0.0",
   "description": "Build full static sites using React, React Router and Webpack",
   "license": "MIT",
   "repository": "iansinnott/react-static-webpack-plugin",
@@ -23,6 +23,7 @@
     "build:compile": "babel -d dist src",
     "bump:patch": "npm version patch -m \"v%s\"",
     "bump:minor": "npm version minor -m \"v%s\"",
+    "bump:major": "npm version major -m \"v%s\"",
     "bump": "npm run bump:patch",
     "preversion": "npm test",
     "postversion": "git push && git push --tags",
@@ -44,6 +45,7 @@
   "dependencies": {
     "bluebird": "^3.4.1",
     "debug": "^2.2.0",
+    "jsdom": "^9.9.1",
     "lodash": "^4.11.1"
   },
   "devDependencies": {

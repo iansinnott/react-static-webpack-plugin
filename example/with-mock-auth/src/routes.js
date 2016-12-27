@@ -13,6 +13,9 @@ const loggedIn = () => {
   /**
    * TODO: Implement your auth logic to determine if a user is logged in
    * already...
+   *
+   * You can also check out the Auth0 example for a more complete
+   * implementation.
    */
   return false;
 };

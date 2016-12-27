@@ -2,6 +2,7 @@
 import React from 'react';
 import classnames from 'classnames/bind';
 import { connect } from 'react-redux';
+import { Map } from 'immutable';
 
 import { getFormValues } from '../modules/things/utils.js';
 import { updateForm, initialize, teardown, addThing } from '../modules/things';
@@ -83,9 +84,11 @@ class Home extends React.Component {
   }
 }
 
-const mapStateToProps = (state) => ({
-  things: state.getIn(['things', 'data']),
-  formValues: getFormValues(state),
-});
+const mapStateToProps = (state) => {
+  return {
+    things: state.getIn(['things', 'data'], Map()),
+    formValues: getFormValues(state),
+  };
+};
 
 export default connect(mapStateToProps)(Home);
