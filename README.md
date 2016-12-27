@@ -158,6 +158,30 @@ However you can also chose to opt in to generating an `index.html` file for ever
 
 See the [deep route nesting](https://github.com/iansinnott/react-static-webpack-plugin/blob/master/example/deep-route-nesting/src/routes.js) example for a complete example of generating `index.html` files.
 
+## Rendering State React Components (Sort of like a browser)
+
+This plugin uses [JSDOM][] to render your components in a pseudo browser environment. This means that everything you expect in the browser _should_ be available to you at render time. This means that code like this won't break your build:
+
+```js
+class Comp extends React.Component {
+  constructor() {
+    this.width = window.innerWidth;
+    this.height = window.innerHeight;
+  }
+
+  render() {
+    const { width, height } = this;
+    return (
+      <div style={{ width, height, }} className='Comp' />
+    );
+  }
+}
+```
+
+Since JSDOM provides a `window` object the React component above will be able to access the global window object just fine.
+
+[JSDOM]: https://github.com/tmpvar/jsdom
+
 ## Current Limitations
 
 This plugin does not currently support all the functionality of react router.
