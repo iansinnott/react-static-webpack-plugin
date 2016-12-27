@@ -8,7 +8,7 @@ import Promise from 'bluebird';
 import vm from 'vm';
 import webpack from 'webpack';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
-import { jsdom, createVirtualConsole } from 'jsdom';
+import { jsdom } from 'jsdom';
 
 import type { OptionsShape } from './constants.js';
 
