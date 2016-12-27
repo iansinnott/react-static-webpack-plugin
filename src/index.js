@@ -95,6 +95,17 @@ StaticSitePlugin.prototype.apply = function(compiler) {
   compiler.plugin('make', (compilation, cb) => {
     const { component, routes, template, reduxStore } = this.options;
 
+    // Promise loggers. These are simply for debugging
+    const promiseLog = (str) => (x) => {
+      debug(`COMPILATION LOG: --${str}--`, x);
+      return x;
+    };
+
+    const promiseErr = (str) => (x) => {
+      debug(`COMPILATION ERR: --${str}--`, x);
+      return Promise.reject(x);
+    };
+
     // Compile routes and template
     const promises = [
       compileAsset({
@@ -102,13 +113,13 @@ StaticSitePlugin.prototype.apply = function(compiler) {
         outputFilename: prefix('routes.js'),
         compilation,
         context: compiler.context,
-      }),
+      }).then(promiseLog('routes')).catch(promiseErr('routes')),
       compileAsset({
         filepath: template,
         outputFilename: prefix('template.js'),
         compilation,
         context: compiler.context,
-      }),
+      }).then(promiseLog('template')).catch(promiseErr('template')),
     ];
 
     if (reduxStore) {
@@ -118,7 +129,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
           outputFilename: prefix('store.js'),
           compilation,
           context: compiler.context,
-        })
+        }).then(promiseLog('reduxStore')).catch(promiseErr('reduxStore'))
       );
     }
 
@@ -159,6 +170,18 @@ StaticSitePlugin.prototype.apply = function(compiler) {
     .then((assets) => {
       if (assets instanceof Error) {
         throw assets;
+      }
+
+      if (!assets) {
+        debug('Assets failed!', assets);
+        throw new Error(
+          'Compilation completed with undefined assets. This likely means\n' +
+          'react-static-webpack-plugin had trouble compiling one of the entry\n' +
+          'points specified in options. To get more detail, try running again\n' +
+          'but prefix your build command with:\n\n' +
+          '  DEBUG=react-static-webpack-plugin*\n\n' +
+          'That will enable debug logging and output more detailed information.'
+        );
       }
 
       // Remove all the now extraneous compiled assets and any sourceamps that
