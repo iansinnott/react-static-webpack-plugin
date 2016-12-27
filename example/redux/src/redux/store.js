@@ -21,6 +21,6 @@ if (process.env.NODE_ENV === 'development') {
 
 // NOTE: This is where we could read initial state from the window object if we
 // decided to stringify it in our template. See template.js for details.
-const store = createStore(reducer, Map({}), applyMiddleware(...middlewares));
+const store = createStore(reducer, Map(), applyMiddleware(...middlewares));
 
 export default store;
