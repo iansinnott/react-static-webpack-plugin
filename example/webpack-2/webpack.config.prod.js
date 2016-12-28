@@ -8,6 +8,8 @@ const ReactStaticPlugin = require('../../dist');
 module.exports = {
   devtool: 'source-map',
 
+  context: __dirname,
+
   entry: {
     app: [
       'normalize.css',
@@ -72,8 +74,8 @@ module.exports = {
           loader: [
             {
               loader: 'css-loader',
-              options: {
-                module: true,
+              query: {
+                modules: true,
                 importLoaders: 2,
               },
             },

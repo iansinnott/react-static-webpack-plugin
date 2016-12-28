@@ -13,7 +13,7 @@ import './favicon.ico';
 export class Home extends React.Component {
   render() {
     return (
-      <div className={cx('page')}>
+      <div className={cx('testableModuleClassName')}>
         <div className={cx('siteTitle')}>
           <img src={logo} alt='React Logo' />
           <h1>React Static Boilerplate</h1>
