@@ -1,21 +1,19 @@
 /* @flow */
+import path from 'path';
+import fs from 'fs';
+import vm from 'vm';
 import flattenDeep from 'lodash/flattenDeep';
 import isString from 'lodash/isString';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
-import path from 'path';
 import Promise from 'bluebird';
-import vm from 'vm';
 import webpack from 'webpack';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 import { jsdom, evalVMScript } from 'jsdom';
 
 import type { OptionsShape } from './constants.js';
 
-/**
- * A simple debug logger
- */
-export const debug = require('debug')('react-static-webpack-plugin');
+const debug = require('debug')('react-static-webpack-plugin:utils');
 
 let extraneousAssets: string[] = [];
 
@@ -38,6 +36,43 @@ type CompileAssetOptionsShape = {
 };
 
 /**
+ * Get all candidate absolute paths for the extract text plugin. If there are
+ * none that's fine. We use these paths to patch extract-text-wepback-plugin
+ * during compilation so that it doesn't throw a fit about loader-plugin
+ * interop.
+ */
+const getExtractTextPluginPaths = (compilation) => {
+  const { options, context } = compilation.compiler;
+  let paths = new Set(); // Ensure unique paths
+
+  if (context) {
+    paths.add(path.resolve(context, './node_modules/extract-text-webpack-plugin'));
+  }
+
+  if (options && options.context) {
+    paths.add(path.resolve(options.context, './node_modules/extract-text-webpack-plugin'));
+  }
+
+  try {
+    if (options.resolve.modules && options.resolve.modules.length) {
+      options.resolve.modules.forEach(x => {
+        paths.add(path.resolve(x, './extract-text-webpack-plugin'));
+      });
+    }
+  } catch (err) { debug('Error resolving options.resolve.modules'); }
+
+  try {
+    if (options.resolveLoader.modules && options.resolveLoader.modules.length) {
+      options.resolveLoader.modules.forEach(x => {
+        paths.add(path.resolve(x, './extract-text-webpack-plugin'));
+      });
+    }
+  } catch (err) { debug('Error resolving options.resolveLoader.modules'); }
+
+  return Array.from(paths).filter(fs.existsSync);
+};
+
+/**
  * Given the filepath of an asset (say js file) compile it and return the source
  */
 type CompileAsset = (a: CompileAssetOptionsShape) => Promise;
@@ -50,36 +85,31 @@ export const compileAsset: CompileAsset = (opts) => {
   };
   let rawAssets = {};
 
+  debug(`Compilation context "${context}"`);
   debug(`Compiling "${path.resolve(context, filepath)}"`);
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
   childCompiler.apply(new SingleEntryPlugin(context, filepath));
   childCompiler.apply(new webpack.DefinePlugin({ REACT_STATIC_WEBPACK_PLUGIN: 'true' }));
 
-  // TODO: Is this fragile? How does it compare to using the require.resolve as
-  // shown here:
-  // const ExtractTextPlugin__dirname = path.dirname(require.resolve('extract-text-webpack-plugin'));
-  //
-  // The whole reason to manually resolve the extract-text-wepbackplugin from
-  // the context is that in my examples which are in subdirs of a large project
-  // they were unable to correctly resolve the dirname, instead looking in the
-  // top-level node_modules folder
-  const extractTextPluginPath = path.resolve(context, './node_modules/extract-text-webpack-plugin');
-
+  // Patch extract text plugin
   childCompiler.plugin('this-compilation', (compilation) => {
-    /**
-     * NOTE: This is taken directly from extract-text-webpack-plugin
-     * https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
-     *
-     * It seems that returning true allows the use of css modules while
-     * setting this equal to false makes the import of css modules fail, which
-     * means rendered pages do not have the correct classnames.
-     * loaderContext[extractTextPluginPath] = false;
-     */
+    const extractTextPluginPaths = getExtractTextPluginPaths(compilation);
+    debug('this-compilation patching extractTextPluginPaths %O', extractTextPluginPaths);
+
+    // NOTE: This is taken directly from extract-text-webpack-plugin
+    // https://github.com/webpack/extract-text-webpack-plugin/blob/v1.0.1/loader.js#L62
+    //
+    // It seems that returning true allows the use of css modules while
+    // setting this equal to false makes the import of css modules fail, which
+    // means rendered pages do not have the correct classnames.
+    // loaderContext[x] = false;
     compilation.plugin('normal-module-loader', (loaderContext) => {
-      loaderContext[extractTextPluginPath] = (content, opt) => {
-        return true;
-      };
+      extractTextPluginPaths.forEach(x => {
+        loaderContext[x] = (content, opt) => { // See NOTE
+          return true;
+        };
+      });
     });
 
     /**

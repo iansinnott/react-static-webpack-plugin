@@ -19,7 +19,6 @@ import {
   compileAsset,
   renderSingleComponent,
   getAssetKey,
-  debug,
   prefix,
   addHash,
   log,
@@ -28,6 +27,8 @@ import type {
   OptionsShape,
   MatchShape,
 } from './constants.js';
+
+const debug = require('debug')('react-static-webpack-plugin:index');
 
 const renderToStaticDocument = (Component, props) => {
   return '<!doctype html>' + renderToStaticMarkup(<Component {...props} />);
@@ -86,7 +87,6 @@ const promiseMatch = (args) => new Promise((resolve, reject) => {
  */
 StaticSitePlugin.prototype.apply = function(compiler) {
   let compilationPromise;
-
 
   /**
    * Compile everything that needs to be compiled. This is what the 'make'
