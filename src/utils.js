@@ -7,7 +7,6 @@ import isString from 'lodash/isString';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import Promise from 'bluebird';
-import webpack from 'webpack';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 import { jsdom, evalVMScript } from 'jsdom';
 
