@@ -90,7 +90,6 @@ export const compileAsset: CompileAsset = (opts) => {
 
   const childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
   childCompiler.apply(new SingleEntryPlugin(context, filepath));
-  childCompiler.apply(new webpack.DefinePlugin({ REACT_STATIC_WEBPACK_PLUGIN: 'true' }));
 
   // Patch extract text plugin
   childCompiler.plugin('this-compilation', (compilation) => {
