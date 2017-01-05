@@ -215,10 +215,33 @@ StaticSitePlugin.prototype.apply = function(compiler) {
       // Set up the render function that will be used later on
       this.render = (props) => renderToStaticDocument(template, props);
 
+      let manifest = Object.keys(compilation.assets).reduce((agg, k) => {
+        agg[k] = k;
+        return agg;
+      }, {});
+
+      const manifestKey = this.options.manifest || 'manifest.json'; // TODO: Is it wise to default this? Maybe it should be explicit?
+      try {
+        const manifestAsset = compilation.assets[manifestKey];
+        if (manifestAsset) {
+          manifest = JSON.parse(manifestAsset.source());
+        } else {
+          debug('No manifest file found so default manifest will be provided');
+        }
+      } catch (err) {
+        debug('Error parsing manifest file:', err);
+      }
+
+      debug('manifest', manifest);
+
       // Support rendering a single component without the need for react router.
       if (!this.options.routes && this.options.component) {
         debug('Entrypoint specified with `component` option. Rendering individual component.');
-        compilation.assets['index.html'] = renderSingleComponent(routes, addHash(this.options, compilation.hash), this.render, store);
+        const options = {
+          ...addHash(this.options, compilation.hash),
+          manifest,
+        };
+        compilation.assets['index.html'] = renderSingleComponent(routes, options, this.render, store);
         return cb();
       }
 
@@ -293,6 +316,7 @@ StaticSitePlugin.prototype.apply = function(compiler) {
             title,
             body,
             reactStaticCompilation,
+            manifest,
           });
 
           compilation.assets[assetKey] = {

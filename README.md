@@ -280,6 +280,7 @@ The `props` object will have everything you passed in the options object to the 
 
 * `body`: A string of HTML to be rendered in the document.
 * `title`: A string that is passed from each of your Route components
+* `manifest`: An object mapping asset names to their generated output filenames. This will simply map asset names to themselves unless you add the [webpack-manifest-plugin][]. Example usage: `manifest['app.js']`. See the section on the [`manifest`](#manifest) option below.
 * `initialState`: If you pass the `reduxStore` option you will get access to the result of calling `store.getState()`. **NOTE:** Since this plugin makes no assumptions about the shape of your app state it is up to you to stringify it and place it in the DOM if you wish to use it.
 
 #### `reduxStore`
@@ -298,7 +299,69 @@ The path to your Redux store. This option allows you to pass a store to react-st
 
 Set to `true` to use render output code without extra DOM attributes such as `data-reactid`, that React uses internally. This is useful if you want to use the React Static Webpack Plugin as a simple static page generator, as stripping away the extra attributes can save lots of bytes.
 
-**Examples coming soon**
+#### `manifest`
+
+**Type:** `string`
+
+**Default:** `'manifest.json'`
+
+(Optional) The output filename of a manifest file if using the [webpack-manifest-plugin][]. This is useful if you want to have access to the manifest within your template file so that you can easily implement long-term caching.
+
+**IMPORTANT NOTE:** For this to work you _MUST_ include the webpack-manifest-plugin _before_ this static site plugin.
+
+Example:
+
+```js
+// webpack.config.js
+module.exports = {
+
+  // Other config...
+
+  plugins: [
+    // Other plugins...
+
+    new ManifestPlugin(), // Important! This must come before the ReactStaticPlugin
+    new ReactStaticPlugin({
+      routes: './client/routes.js',
+      template: './template.js',
+    }),
+  ],
+};
+```
+
+```js
+// template.js
+const React = require('react');
+const T = React.PropTypes;
+
+const Html = ({ title = 'Amazing Default Title', body, manifest }) => (
+  <html lang='en'>
+    <head>
+      <meta charSet='utf-8' />
+      <meta httpEquiv='X-UA-Compatible' content='IE=edge' />
+      <meta name='viewport' content='width=device-width, initial-scale=1' />
+      <title>{title}</title>
+      <link rel='stylesheet' href={manifest['app.css']} />
+    </head>
+    <body>
+      <div id='root' dangerouslySetInnerHTML={{ __html: body }} />
+      <script src={manifest['app.js']} />
+    </body>
+  </html>
+);
+
+Html.propTypes = {
+  title: T.string,
+  body: T.string,
+  manifest: T.object.isRequired,
+};
+
+module.exports = Html;
+```
+
+NOTE: In the above template file the `href` for the stylesheet as well as the `src` for the script tag are specified as keys on the `manifest` object.
+
+[webpack-manifest-plugin]: https://github.com/danethurber/webpack-manifest-plugin
 
 ## Roadmap
 
