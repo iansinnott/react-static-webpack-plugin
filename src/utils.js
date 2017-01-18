@@ -154,6 +154,11 @@ export const compileAsset: CompileAsset = (opts) => {
   // https://github.com/crypto-browserify/crypto-browserify/blob/v3.2.6/rng.js
   return new Promise((resolve, reject) => {
     childCompiler.runAsChild(function(err, entries, childCompilation) {
+      if (err) {
+        debug('ERROR in compilation: ', err);
+        reject(err);
+      }
+
       // Resolve / reject the promise
       if (childCompilation.errors && childCompilation.errors.length) {
         const errorDetails = childCompilation.errors.map((err) => {
