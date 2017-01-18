@@ -1,7 +1,7 @@
 # React Static Webpack Plugin
 
 [![Build Status](https://img.shields.io/circleci/project/iansinnott/react-static-webpack-plugin.svg)](https://circleci.com/gh/iansinnott/react-static-webpack-plugin)
-[![react-string-replace.js on NPM](https://img.shields.io/npm/v/react-static-webpack-plugin.svg)](https://www.npmjs.com/package/react-static-webpack-plugin)
+[![react-static-webpack-plugin on NPM](https://img.shields.io/npm/v/react-static-webpack-plugin.svg)](https://www.npmjs.com/package/react-static-webpack-plugin)
 
 
 _Build full static sites using React, React Router and Webpack_
@@ -14,7 +14,15 @@ _Build full static sites using React, React Router and Webpack_
 $ npm install --save-dev react-static-webpack-plugin
 ```
 
-## Usage
+## Usage (Webpack 2.x)
+
+This plugin should Just Work™ with Webpack 2, so have a look at the examples below. However, some of them may contain other configuration which is specific to Webpack 1, so your best bet if something doesn't work is to check out the:
+
+👉 **[Webpack 2 Example][]**
+
+[Webpack 2 Example]: https://github.com/iansinnott/react-static-webpack-plugin/tree/master/example/webpack-2
+
+## Usage (Webpack 1.x)
 
 ### Simple Example
 
