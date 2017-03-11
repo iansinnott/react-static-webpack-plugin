@@ -79,7 +79,7 @@
     "history": ">= 4 < 5",
     "react": ">= 0.14.0",
     "react-dom": ">= 0.14.0",
-    "react-router": ">= 2.4.0 < 4",
+    "react-router": ">=4.0.0",
     "webpack": ">= 1.13.1 < 3"
   }
 }
