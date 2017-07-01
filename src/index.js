@@ -63,6 +63,205 @@ const promiseMatch = (args) => new Promise((resolve, reject) => {
   }, reject);
 });
 
+function handleEmitAssets(assets, compilation) {
+  debug('HANDLE: First call to handleEmitAssets');
+  if (assets instanceof Error) {
+    debug('HANDLE: Oh no, error here');
+    throw assets;
+  }
+
+  if (!assets) {
+    debug('HANDLE: Assets failed!');
+    throw new Error(
+      'Compilation completed with undefined assets. This likely means\n' +
+      'react-static-webpack-plugin had trouble compiling one of the entry\n' +
+      'points specified in options. To get more detail, try running again\n' +
+      'but prefix your build command with:\n\n' +
+      '  DEBUG=react-static-webpack-plugin*\n\n' +
+      'That will enable debug logging and output more detailed information.'
+    );
+  }
+
+  // Remove all the now extraneous compiled assets and any sourceamps that
+  // may have been generated for them
+  getExtraneousAssets().forEach(key => {
+    debug(`HANDLE: Removing extraneous asset and associated sourcemap. Asset name: "${key}"`);
+    delete compilation.assets[key];
+    delete compilation.assets[key + '.map'];
+  });
+
+  let [routes, template, store] = assets;
+
+  if (!routes) {
+    debug('HANDLE: No routes found');
+    throw new Error(`Entry file compiled with empty source: ${this.options.routes || this.options.component}`);
+  }
+
+  routes = routes.routes || routes.default || routes;
+
+  if (template) {
+    template = template.default || template;
+  }
+
+  if (store) {
+    store = store.store || store.default || store;
+  }
+
+  if (this.options.template && !isFunction(template)) {
+    debug('HANDLE: Template function is not a function');
+    throw new Error(`Template file did not compile with renderable default export: ${this.options.template}`);
+  }
+
+  // Set up the render function that will be used later on
+  this.render = (props) => renderToStaticDocument(template, props);
+
+  let manifest = Object.keys(compilation.assets).reduce((agg, k) => {
+    agg[k] = k;
+    return agg;
+  }, {});
+
+  const manifestKey = this.options.manifest || 'manifest.json'; // TODO: Is it wise to default this? Maybe it should be explicit?
+  try {
+    const manifestAsset = compilation.assets[manifestKey];
+    if (manifestAsset) {
+      manifest = JSON.parse(manifestAsset.source());
+    } else {
+      debug('HANDLE: No manifest file found so default manifest will be provided');
+    }
+  } catch (err) {
+    debug('HANDLE: Error parsing manifest file:', err);
+  }
+
+  debug('HANDLE: manifest', manifest);
+
+  // Support rendering a single component without the need for react router.
+  if (!this.options.routes && this.options.component) {
+    debug('HANDLE: Entrypoint specified with `component` option. Rendering individual component.');
+    const options = {
+      ...addHash(this.options, compilation.hash),
+      manifest,
+    };
+    compilation.assets['index.html'] = renderSingleComponent(routes, options, this.render, store);
+    return Promise.resolve();
+  }
+
+  const paths = getAllPaths(routes);
+  debug('HANDLE: Parsed routes:', paths);
+
+  // Make sure the user has installed redux dependencies if they passed in a
+  // store
+  let Provider;
+  if (store) {
+    try {
+      Provider = require('react-redux').Provider;
+    } catch (err) {
+      debug('HANDLE: Oh no, error here', err);
+      err.message = `Looks like you provided the 'reduxStore' option but there was an error importing these dependencies. Did you forget to install 'redux' and 'react-redux'?\n${err.message}`;
+      throw err;
+    }
+  }
+
+  const promises = paths.map(location => {
+    debug(`HANDLE: Mapping location "${location}"`);
+    return promiseMatch({ routes, location })
+      .then(({ error, redirectLocation, renderProps }: MatchShape): void => {
+        let { options } = this;
+        const logPrefix = 'react-static-webpack-plugin:';
+        const emptyBodyWarning = 'Route will be rendered with an empty body.';
+        let component;
+
+        if (redirectLocation) {
+          debug(`HANDLE: Redirect encountered. Ignoring route: "${location}"`, redirectLocation);
+          log(`${logPrefix} Redirect encountered: ${location} -> ${redirectLocation.pathname}. ${emptyBodyWarning}`);
+        } else if (error) {
+          debug('HANDLE: Error encountered matching route', location, error, redirectLocation, renderProps);
+          log(`${logPrefix} Error encountered rendering route "${location}". ${emptyBodyWarning}`);
+        } else if (!renderProps) {
+          debug('HANDLE: No renderProps found matching route', location, error, redirectLocation, renderProps);
+          log(`${logPrefix} No renderProps found matching route "${location}". ${emptyBodyWarning}`);
+        } else if (store) {
+          debug(`HANDLE: Redux store provided. Rendering "${location}" within Provider.`);
+          component = (
+            <Provider store={store}>
+              <RouterContext {...renderProps} />
+            </Provider>
+          );
+
+          // Make sure initialState will be provided to the template
+          options = { ...options, initialState: store.getState() };
+        } else {
+          debug('HANDLE: Creating routing context. Default case');
+          component = <RouterContext {...renderProps} />; // Successful render
+        }
+
+        let title = '';
+
+        if (renderProps) {
+          const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
+          title = route.title;
+        }
+
+        const reactStaticCompilation = {
+          error,
+          redirectLocation,
+          renderProps,
+          location,
+          options, // NOTE: Options is duplciated as a root level prop below, but removing that would mean a major version bump
+        };
+
+        const renderMethod = this.options.renderToStaticMarkup === true
+          ? renderToStaticMarkup
+          : renderToString;
+
+        // NOTE: Rendering a component can cause issues if thought isn't given
+        // to server side rendering. We are doing SSR here, plain and simple.
+        // Considering that, it's important to remember what lifecycle hooks
+        // will and won't be called in the rendered component. Namely,
+        // componentWillMount is the only one that will be called. And also the
+        // constructor if you consider it a lifecylce hook. componentWillUnmount
+        // is NEVER CALLED, so if you did anything that needs to be cleaned up
+        // it never will be during this render call. For example, don't set up
+        // an interval within constructor or componentWillMount, because it will
+        // likely hold on to some memory and never let it go. This can cause
+        // webpack to hang after emit. There's no error, it just never fully
+        // completes.
+        let body;
+        try {
+          if (component) {
+            debug('HANDLE: Trying to render component', component, renderMethod.name);
+            body = renderMethod(component); // See NOTE
+          } else {
+            debug('HANDLE: No coponent provided. Moving on');
+          }
+        } catch (err) {
+          debug('HANDLE: Error rendering component', err);
+        } finally {
+          debug('HANDLE: Finally setting body to empty string if it wasn\'t already set');
+          body = body || '';
+        }
+
+        debug(`HANDLE: Rendering "${location}" with body = ${body}`);
+
+        const assetKey = getAssetKey(location);
+        const doc = this.render({
+          ...addHash(options, compilation.hash),
+          title,
+          body,
+          reactStaticCompilation,
+          manifest,
+        });
+
+        debug(`HANDLE: Finishing up, adding asset key to compilation.assets["${assetKey}"]`);
+        compilation.assets[assetKey] = {
+          source() { return doc; },
+          size() { return doc.length; },
+        };
+      });
+  });
+
+  return Promise.all(promises);
+}
+
 /**
  * `compiler` is an instance of the Compiler
  * https://github.com/webpack/webpack/blob/master/lib/Compiler.js#L143
@@ -166,170 +365,20 @@ StaticSitePlugin.prototype.apply = function(compiler) {
    */
   compiler.plugin('emit', (compilation, cb) => {
     compilationPromise
-    .catch(cb) // TODO: Eval failed, likely a syntax error in build
-    .then((assets) => {
-      if (assets instanceof Error) {
-        throw assets;
-      }
-
-      if (!assets) {
-        debug('Assets failed!', assets);
-        throw new Error(
-          'Compilation completed with undefined assets. This likely means\n' +
-          'react-static-webpack-plugin had trouble compiling one of the entry\n' +
-          'points specified in options. To get more detail, try running again\n' +
-          'but prefix your build command with:\n\n' +
-          '  DEBUG=react-static-webpack-plugin*\n\n' +
-          'That will enable debug logging and output more detailed information.'
-        );
-      }
-
-      // Remove all the now extraneous compiled assets and any sourceamps that
-      // may have been generated for them
-      getExtraneousAssets().forEach(key => {
-        debug(`Removing extraneous asset and associated sourcemap. Asset name: "${key}"`);
-        delete compilation.assets[key];
-        delete compilation.assets[key + '.map'];
-      });
-
-      let [routes, template, store] = assets;
-
-      if (!routes) {
-        throw new Error(`Entry file compiled with empty source: ${this.options.routes || this.options.component}`);
-      }
-
-      routes = routes.routes || routes.default || routes;
-
-      if (template) {
-        template = template.default || template;
-      }
-
-      if (store) {
-        store = store.store || store.default || store;
-      }
-
-      if (this.options.template && !isFunction(template)) {
-        throw new Error(`Template file did not compile with renderable default export: ${this.options.template}`);
-      }
-
-      // Set up the render function that will be used later on
-      this.render = (props) => renderToStaticDocument(template, props);
-
-      let manifest = Object.keys(compilation.assets).reduce((agg, k) => {
-        agg[k] = k;
-        return agg;
-      }, {});
-
-      const manifestKey = this.options.manifest || 'manifest.json'; // TODO: Is it wise to default this? Maybe it should be explicit?
-      try {
-        const manifestAsset = compilation.assets[manifestKey];
-        if (manifestAsset) {
-          manifest = JSON.parse(manifestAsset.source());
-        } else {
-          debug('No manifest file found so default manifest will be provided');
-        }
-      } catch (err) {
-        debug('Error parsing manifest file:', err);
-      }
-
-      debug('manifest', manifest);
-
-      // Support rendering a single component without the need for react router.
-      if (!this.options.routes && this.options.component) {
-        debug('Entrypoint specified with `component` option. Rendering individual component.');
-        const options = {
-          ...addHash(this.options, compilation.hash),
-          manifest,
-        };
-        compilation.assets['index.html'] = renderSingleComponent(routes, options, this.render, store);
-        return cb();
-      }
-
-      const paths = getAllPaths(routes);
-      debug('Parsed routes:', paths);
-
-      // Make sure the user has installed redux dependencies if they passed in a
-      // store
-      let Provider;
-      if (store) {
-        try {
-          Provider = require('react-redux').Provider;
-        } catch (err) {
-          err.message = `Looks like you provided the 'reduxStore' option but there was an error importing these dependencies. Did you forget to install 'redux' and 'react-redux'?\n${err.message}`;
-          throw err;
-        }
-      }
-
-      Promise.all(paths.map(location => {
-        return promiseMatch({ routes, location })
-        .then(({ error, redirectLocation, renderProps }: MatchShape): void => {
-          let { options } = this;
-          const logPrefix = 'react-static-webpack-plugin:';
-          const emptyBodyWarning = 'Route will be rendered with an empty body.';
-          let component;
-
-          if (redirectLocation) {
-            debug(`Redirect encountered. Ignoring route: "${location}"`, redirectLocation);
-            log(`${logPrefix} Redirect encountered: ${location} -> ${redirectLocation.pathname}. ${emptyBodyWarning}`);
-          } else if (error) {
-            debug('Error encountered matching route', location, error, redirectLocation, renderProps);
-            log(`${logPrefix} Error encountered rendering route "${location}". ${emptyBodyWarning}`);
-          } else if (!renderProps) {
-            debug('No renderProps found matching route', location, error, redirectLocation, renderProps);
-            log(`${logPrefix} No renderProps found matching route "${location}". ${emptyBodyWarning}`);
-          } else if (store) {
-            debug(`Redux store provided. Rendering "${location}" within Provider.`);
-            component = (
-              <Provider store={store}>
-                <RouterContext {...renderProps} />
-              </Provider>
-            );
-
-            // Make sure initialState will be provided to the template
-            options = { ...options, initialState: store.getState() };
-          } else {
-            component = <RouterContext {...renderProps} />; // Successful render
-          }
-
-          let title = '';
-
-          if (renderProps) {
-            const route = renderProps.routes[renderProps.routes.length - 1]; // See NOTE
-            title = route.title;
-          }
-
-          const reactStaticCompilation = {
-            error,
-            redirectLocation,
-            renderProps,
-            location,
-            options, // NOTE: Options is duplciated as a root level prop below, but removing that would mean a major version bump
-          };
-
-          const renderMethod = this.options.renderToStaticMarkup === true
-            ? renderToStaticMarkup
-            : renderToString;
-          const body = component ? renderMethod(component) : '';
-          const assetKey = getAssetKey(location);
-          const doc = this.render({
-            ...addHash(options, compilation.hash),
-            title,
-            body,
-            reactStaticCompilation,
-            manifest,
-          });
-
-          compilation.assets[assetKey] = {
-            source() { return doc; },
-            size() { return doc.length; },
-          };
-        });
-      }))
-      .catch((err) => {
-        if (err) throw err;
+      .catch(err => {
+        debug('EMIT: Oh no, error here', err);
+        cb(err);
+      }) // TODO: Eval failed, likely a syntax error in build
+      .then(assets =>
+        handleEmitAssets.call(this, assets, compilation))
+      .then(() => {
+        debug('EMIT: All green. Assets emit just fine');
+        cb();
       })
-      .finally(cb);
-    });
+      .catch(err => {
+        debug('EMIT: Another error here', err);
+        cb(err);
+      });
   });
 };
 
